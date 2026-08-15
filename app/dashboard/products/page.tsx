@@ -8,12 +8,9 @@ import {
   Search,
   Edit2,
   Trash2,
-  Check,
   X,
   PlusCircle,
   MinusCircle,
-  Eye,
-  Settings,
   Image as ImageIcon,
   CheckCircle,
   AlertTriangle,
@@ -180,13 +177,11 @@ export default function ProductsPage() {
     setBestSeller(false);
     setSeoTitle("");
     setSeoDescription("");
-
     setFormFeatures([]);
     setFormSpecs([]);
     setFormSteps([]);
     setFormFaqs([]);
     setFormImages([]);
-
     setActiveTab("general");
     setShowModal(true);
   };
@@ -209,13 +204,11 @@ export default function ProductsPage() {
     setBestSeller(product.bestSeller);
     setSeoTitle(product.seoTitle || "");
     setSeoDescription(product.seoDescription || "");
-
     setFormFeatures(product.features || []);
     setFormSpecs(product.specifications || []);
     setFormSteps(product.howToUse || []);
     setFormFaqs(product.faqs || []);
     setFormImages(product.images || []);
-
     setActiveTab("general");
     setShowModal(true);
   };
@@ -229,19 +222,11 @@ export default function ProductsPage() {
         try {
           const res = await fetchAPI(`/api/products/${id}`, { method: "DELETE" });
           if (res.success) {
-            showAlert({
-              title: "সফল হয়েছে",
-              message: "প্রোডাক্ট সফলভাবে ডিলিট করা হয়েছে।",
-              type: "success",
-            });
+            showAlert({ title: "সফল হয়েছে", message: "প্রোডাক্ট সফলভাবে ডিলিট করা হয়েছে।", type: "success" });
             loadProducts();
           }
         } catch (err: any) {
-          showAlert({
-            title: "ত্রুটি",
-            message: err.message || "ডিলিট ব্যর্থ হয়েছে।",
-            type: "error",
-          });
+          showAlert({ title: "ত্রুটি", message: err.message || "ডিলিট ব্যর্থ হয়েছে।", type: "error" });
         }
       },
     });
@@ -256,18 +241,21 @@ export default function ProductsPage() {
       for (const file of Array.from(files)) {
         const formData = new FormData();
         formData.append("image", file);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/media`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
-          body: formData,
-        });
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/media`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
+            body: formData,
+          }
+        );
         const data = await res.json();
         if (data.success && data.media?.url) {
           uploadedUrls.push(data.media.url);
         }
       }
       if (target === "main") {
-        setFormImages((prev) => [uploadedUrls[0] || prev[0], ...prev.slice(1)]);
+        setFormImages((prev) => [uploadedUrls[0] || prev[0] || "", ...prev.slice(1)]);
       } else {
         setFormImages((prev) => [...prev, ...uploadedUrls]);
       }
@@ -303,7 +291,8 @@ export default function ProductsPage() {
     else updated[index].desc = val;
     setFormSteps(updated);
   };
-  const removeStep = (index: number) => setFormSteps((prev) => prev.filter((_, i) => i !== index).map((s, idx) => ({ ...s, step: idx + 1 })));
+  const removeStep = (index: number) =>
+    setFormSteps((prev) => prev.filter((_, i) => i !== index).map((s, idx) => ({ ...s, step: idx + 1 })));
 
   const addFaq = () => setFormFaqs((prev) => [...prev, { question: "", answer: "" }]);
   const updateFaq = (index: number, field: "question" | "answer", val: string) => {
@@ -362,19 +351,15 @@ export default function ProductsPage() {
 
       if (res.success) {
         showAlert({
-          title: "সফল হয়েছে",
-          message: editingProduct ? "প্রোডাক্ট সফলভাবে আপডেট হয়েছে।" : "নতুন প্রোডাক্ট সফলভাবে যুক্ত হয়েছে।",
+          title: "সফল হয়েছে",
+          message: editingProduct ? "প্রোডাক্ট সফলভাবে আপডেট হয়েছে।" : "নতুন প্রোডাক্ট সফলভাবে যুক্ত হয়েছে।",
           type: "success",
         });
         setShowModal(false);
         loadProducts();
       }
     } catch (err: any) {
-      showAlert({
-        title: "ত্রুটি",
-        message: err.message || "সংরক্ষণ ব্যর্থ হয়েছে।",
-        type: "error",
-      });
+      showAlert({ title: "ত্রুটি", message: err.message || "সংরক্ষণ ব্যর্থ হয়েছে।", type: "error" });
     } finally {
       setSubmitting(false);
     }
@@ -397,23 +382,20 @@ export default function ProductsPage() {
         </button>
       </div>
 
-      {/* Filter Options Panel */}
+      {/* Filter Panel */}
       <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-2xs flex flex-col md:flex-row md:items-center gap-4 justify-between">
-        {/* Search */}
         <div className="relative flex-1 max-w-md">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
             <Search className="w-4.5 h-4.5" />
           </div>
           <input
             type="text"
-            placeholder="প্রোডাক্ট নাম, ক্যাটাগরি দিয়ে খুঁজুন..."
+            placeholder="প্রোডাক্ট নাম, ক্যাটাগরি দিয়ে খুঁজুন..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 focus:border-emerald-500 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-all"
           />
         </div>
-
-        {/* Category & Status Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <select
             value={categoryId}
@@ -422,25 +404,22 @@ export default function ProductsPage() {
           >
             <option value="">সকল ক্যাটাগরি</option>
             {categories.map((cat) => (
-              <option key={cat._id} value={cat.slug}>
-                {cat.name}
-              </option>
+              <option key={cat._id} value={cat.slug}>{cat.name}</option>
             ))}
           </select>
-
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             className="px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none text-slate-600"
           >
             <option value="">সকল স্ট্যাটাস</option>
-            <option value="active">Active (সক্রিয়)</option>
-            <option value="inactive">Inactive (নিষ্ক্রিয়)</option>
+            <option value="active">Active (সক্রিয়)</option>
+            <option value="inactive">Inactive (নিষ্ক্রিয়)</option>
           </select>
         </div>
       </div>
 
-      {/* Products Table Wrapper */}
+      {/* Products Table */}
       {loading ? (
         <div className="flex items-center justify-center min-h-[300px]">
           <div className="w-8 h-8 rounded-full border-4 border-emerald-200 border-t-emerald-600 animate-spin" />
@@ -467,11 +446,7 @@ export default function ProductsPage() {
                     <tr key={product._id} className="border-b border-slate-100 hover:bg-slate-50/20 transition-colors">
                       <td className="py-3 px-6">
                         <div className="relative w-11 h-11 rounded-lg overflow-hidden border border-slate-200/80 bg-white">
-                          <img
-                            src={product.images[0] || "/placeholder-image.png"}
-                            alt={product.title}
-                            className="object-cover w-full h-full"
-                          />
+                          <img src={product.images[0] || "/placeholder-image.png"} alt={product.title} className="object-cover w-full h-full" />
                         </div>
                       </td>
                       <td className="py-3 px-4">
@@ -485,13 +460,11 @@ export default function ProductsPage() {
                       <td className="py-3 px-4 text-center">
                         {product.inStock ? (
                           <span className="inline-flex items-center gap-1 text-green-700 bg-green-50 px-2 py-0.5 rounded-full text-[10px]">
-                            <CheckCircle className="w-3 h-3" />
-                            <span>In Stock</span>
+                            <CheckCircle className="w-3 h-3" /><span>In Stock</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-red-700 bg-red-50 px-2 py-0.5 rounded-full text-[10px]">
-                            <AlertTriangle className="w-3 h-3" />
-                            <span>Stock Out</span>
+                            <AlertTriangle className="w-3 h-3" /><span>Stock Out</span>
                           </span>
                         )}
                       </td>
@@ -525,37 +498,22 @@ export default function ProductsPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="py-10 text-center text-slate-400">
-                      কোনো প্রোডাক্ট খুঁজে পাওয়া যায়নি।
-                    </td>
+                    <td colSpan={8} className="py-10 text-center text-slate-400">কোনো প্রোডাক্ট খুঁজে পাওয়া যায়নি।</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
 
-          {/* Pagination Controls */}
           {totalPages > 1 && (
             <div className="p-5 border-t border-slate-150 bg-slate-50/50 flex items-center justify-between">
               <span className="text-xs text-slate-400 font-bold">
                 মোট {totalProducts} টি প্রোডাক্ট এর মধ্যে {(page - 1) * 10 + 1}-{Math.min(page * 10, totalProducts)} দেখাচ্ছে
               </span>
               <div className="flex items-center gap-2">
-                <button
-                  disabled={page === 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 disabled:opacity-50 text-slate-500 text-xs font-bold hover:bg-white"
-                >
-                  পূর্ববর্তী
-                </button>
+                <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="px-3 py-1.5 rounded-lg border border-slate-200 disabled:opacity-50 text-slate-500 text-xs font-bold hover:bg-white">পূর্ববর্তী</button>
                 <span className="text-xs font-bold text-slate-600 px-3">{page}/{totalPages}</span>
-                <button
-                  disabled={page === totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 disabled:opacity-50 text-slate-500 text-xs font-bold hover:bg-white"
-                >
-                  পরবর্তী
-                </button>
+                <button disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="px-3 py-1.5 rounded-lg border border-slate-200 disabled:opacity-50 text-slate-500 text-xs font-bold hover:bg-white">পরবর্তী</button>
               </div>
             </div>
           )}
@@ -565,9 +523,7 @@ export default function ProductsPage() {
       {/* CRUD Product Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/60 backdrop-blur-xs">
-          {/* Backdrop Closer */}
           <div className="absolute inset-0" onClick={() => setShowModal(false)} />
-
           <div className="relative w-full max-w-3xl h-full bg-white shadow-2xl flex flex-col justify-between z-10 animate-slide-in-right">
             {/* Modal Header */}
             <div className="h-20 border-b border-slate-150 px-6 sm:px-8 flex items-center justify-between bg-slate-50 shrink-0">
@@ -579,15 +535,12 @@ export default function ProductsPage() {
                   {editingProduct ? `ID: ${editingProduct.id}` : "প্রোডাক্ট ডাটাবেস ফর্ম"}
                 </p>
               </div>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-all cursor-pointer"
-              >
+              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-all cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Tabs Navigator */}
+            {/* Modal Tabs */}
             <div className="flex border-b border-slate-150 bg-slate-50/50 px-6 sm:px-8 shrink-0 overflow-x-auto">
               {(["general", "images", "details", "seo"] as const).map((tab) => (
                 <button
@@ -595,9 +548,7 @@ export default function ProductsPage() {
                   type="button"
                   onClick={() => setActiveTab(tab)}
                   className={`py-3.5 px-4 text-xs font-black capitalize transition-all border-b-2 cursor-pointer ${
-                    activeTab === tab
-                      ? "border-emerald-600 text-emerald-700"
-                      : "border-transparent text-slate-400 hover:text-slate-600"
+                    activeTab === tab ? "border-emerald-600 text-emerald-700" : "border-transparent text-slate-400 hover:text-slate-600"
                   }`}
                 >
                   {tab === "general" ? "সাধারন তথ্য" : tab === "images" ? "ছবি সমূহ" : tab === "details" ? "ডিটেইলস ও ফিচারস" : "SEO মেটা"}
@@ -605,159 +556,96 @@ export default function ProductsPage() {
               ))}
             </div>
 
-            {/* Modal Body Scrolling */}
+            {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+
+              {/* ── GENERAL TAB ── */}
               {activeTab === "general" && (
                 <div className="space-y-4">
-                  {/* Title */}
                   <div className="space-y-1.5">
                     <label className="block text-xs font-black text-slate-700">প্রোডাক্ট এর নাম <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="যেমন: বাবল বস কালার গার্ড ফোমিং জেল (৫৫০ মিলি)"
-                      required
-                      className="w-full px-4 py-2.5 border border-slate-200 focus:border-emerald-500 rounded-xl text-sm font-semibold focus:outline-none"
-                    />
+                    <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="যেমন: বাবল বস কালার গার্ড ফোমিং জেল (৫৫০ মিলি)" required className="w-full px-4 py-2.5 border border-slate-200 focus:border-emerald-500 rounded-xl text-sm font-semibold focus:outline-none" />
                   </div>
 
-                  {/* Category & Unit */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-black text-slate-700">ক্যাটাগরি <span className="text-red-500">*</span></label>
-                      <select
-                        value={selectedCategoryId}
-                        onChange={(e) => setSelectedCategoryId(e.target.value)}
-                        className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
-                      >
-                        {categories.map((cat) => (
-                          <option key={cat._id} value={cat.slug}>
-                            {cat.name}
-                          </option>
-                        ))}
+                      <select value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none">
+                        {categories.map((cat) => (<option key={cat._id} value={cat.slug}>{cat.name}</option>))}
                       </select>
                     </div>
-
                     <div className="space-y-1.5">
                       <label className="block text-xs font-black text-slate-700">প্যাক সাইজ / ইউনিট <span className="text-red-500">*</span></label>
-                      <input
-                        type="text"
-                        value={unit}
-                        onChange={(e) => setUnit(e.target.value)}
-                        placeholder="যেমন: ৫৫০ মিলি বোটল (১টি মাইক্রোফাইবার ফ্রি)"
-                        required
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
-                      />
+                      <input type="text" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="যেমন: ৫৫০ মিলি বোটল (১টি মাইক্রোফাইবার ফ্রি)" required className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none" />
                     </div>
                   </div>
 
-                  {/* Price & Original Price */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-black text-slate-700">বিক্রয় মূল্য (৳) <span className="text-red-500">*</span></label>
-                      <input
-                        type="number"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                        placeholder="350"
-                        required
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
-                      />
+                      <label className="block text-xs font-black text-slate-700">বিক্রয় মূল্য (৳) <span className="text-red-500">*</span></label>
+                      <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="350" required className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none" />
                     </div>
-
                     <div className="space-y-1.5">
                       <label className="block text-xs font-black text-slate-700">পূর্বের মূল্য / ডিসকাউন্ট মূল্য (৳)</label>
-                      <input
-                        type="number"
-                        value={originalPrice}
-                        onChange={(e) => setOriginalPrice(e.target.value)}
-                        placeholder="450"
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
-                      />
+                      <input type="number" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} placeholder="450" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none" />
                     </div>
                   </div>
 
-                  {/* Stock Count & Badge */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-black text-slate-700">স্টক পরিমাণ</label>
-                      <input
-                        type="number"
-                        value={stockCount}
-                        onChange={(e) => setStockCount(e.target.value)}
-                        placeholder="99"
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
-                      />
+                      <input type="number" value={stockCount} onChange={(e) => setStockCount(e.target.value)} placeholder="99" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none" />
                     </div>
-
                     <div className="space-y-1.5">
                       <label className="block text-xs font-black text-slate-700">ব্যাজ / অফার লেবেল</label>
-                      <input
-                        type="text"
-                        value={badge}
-                        onChange={(e) => setBadge(e.target.value)}
-                        placeholder="যেমন: হট ডিল, বেস্ট সেলার, পপুলার"
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
-                      />
+                      <input type="text" value={badge} onChange={(e) => setBadge(e.target.value)} placeholder="যেমন: হট ডিল, বেস্ট সেলার, পপুলার" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none" />
                     </div>
                   </div>
 
-                  {/* Hotlines */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-black text-slate-700">অর্ডার হটলাইন ফোন</label>
-                      <input
-                        type="text"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="01958-058359"
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
-                      />
+                      <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01958-058359" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none" />
                     </div>
-
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-black text-slate-700">অর্ডার হোয়াটসঅ্যাপ নম্বর</label>
-                      <input
-                        type="text"
-                        value={whatsapp}
-                        onChange={(e) => setWhatsapp(e.target.value)}
-                        placeholder="8801958058359"
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
-                      />
+                      <label className="block text-xs font-black text-slate-700">অর্ডার হোয়াটসঅ্যাপ নম্বর</label>
+                      <input type="text" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="8801958058359" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none" />
                     </div>
                   </div>
 
-                  {/* Toggles */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-3">
                     <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={inStock}
-                        onChange={(e) => setInStock(e.target.checked)}
-                        className="w-4.5 h-4.5 text-emerald-600 rounded-md border-slate-350 focus:ring-emerald-100"
-                      />
-                      <span className="text-xs font-black text-slate-700">ইন স্টক (In Stock)</span>
+                      <input type="checkbox" checked={inStock} onChange={(e) => setInStock(e.target.checked)} className="w-4 h-4 text-emerald-600 rounded" />
+                      <span className="text-xs font-black text-slate-700">ইন স্টক</span>
                     </label>
-
                     <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={featured}
-                        onChange={(e) => setFeatured(e.target.checked)}
-                        className="w-4.5 h-4.5 text-emerald-600 rounded-md border-slate-350 focus:ring-emerald-100"
-                      />
-                      <span className="text-xs font-black text-slate-700">ফিচার্ড (Featured)</span>
+                      <input type="checkbox" checked={featured} onChange={(e) => setFeatured(e.target.checked)} className="w-4 h-4 text-emerald-600 rounded" />
+                      <span className="text-xs font-black text-slate-700">ফিচার্ড</span>
                     </label>
-
                     <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={bestSeller}
-                        onChange={(e) => setBestSeller(e.target.checked)}
-                            {activeTab === "images" && (
+                      <input type="checkbox" checked={bestSeller} onChange={(e) => setBestSeller(e.target.checked)} className="w-4 h-4 text-emerald-600 rounded" />
+                      <span className="text-xs font-black text-slate-700">বেস্ট সেলার</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-slate-700 shrink-0">স্ট্যাটাস:</span>
+                      <select value={prodStatus} onChange={(e) => setProdStatus(e.target.value as any)} className="px-2 py-1 border border-slate-200 rounded-lg text-xs font-bold focus:outline-none">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 pt-2">
+                    <label className="block text-xs font-black text-slate-700">প্রোডাক্ট বিবরণী <span className="text-red-500">*</span></label>
+                    <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="প্রোডাক্টটি সম্পর্কে ১-২ লাইনের বিবরণী প্রদান করুন..." rows={3} required className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none" />
+                  </div>
+                </div>
+              )}
+
+              {/* ── IMAGES TAB ── */}
+              {activeTab === "images" && (
                 <div className="space-y-6">
-                  {/* Main Product Image */}
+                  {/* Main Image */}
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
                     <h4 className="text-xs font-black text-slate-700">প্রোডাক্ট কভার ইমেজ (Main Image)</h4>
                     <div className="flex items-center gap-6">
@@ -765,11 +653,7 @@ export default function ProductsPage() {
                         {formImages[0] ? (
                           <>
                             <img src={formImages[0]} className="object-cover w-full h-full" alt="Cover" />
-                            <button
-                              type="button"
-                              onClick={() => removeFormImage(0)}
-                              className="absolute top-1 right-1 p-0.5 rounded-md bg-red-600 text-white cursor-pointer"
-                            >
+                            <button type="button" onClick={() => removeFormImage(0)} className="absolute top-1 right-1 p-0.5 rounded-md bg-red-600 text-white cursor-pointer">
                               <X className="w-3 h-3" />
                             </button>
                           </>
@@ -778,33 +662,19 @@ export default function ProductsPage() {
                         )}
                       </div>
                       <div className="space-y-3">
-                        <label className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs ${
-                          uploadingMain
-                            ? "bg-slate-300 text-slate-500 cursor-not-allowed"
-                            : "bg-slate-900 hover:bg-slate-800 text-white"
-                        }`}>
+                        <label className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs ${uploadingMain ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-slate-900 hover:bg-slate-800 text-white"}`}>
                           {uploadingMain ? (
                             <><div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /><span>আপলোড হচ্ছে...</span></>
                           ) : (
                             <><ImageIcon className="w-3.5 h-3.5" /><span>ছবি আপলোড করুন</span></>
                           )}
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp"
-                            className="hidden"
-                            disabled={uploadingMain}
-                            onChange={(e) => handleDirectUpload(e.target.files, "main")}
-                          />
+                          <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingMain} onChange={(e) => handleDirectUpload(e.target.files, "main")} />
                         </label>
                         <p className="text-[10px] text-slate-400 font-semibold">অথবা সরাসরি ইমেজ URL পেস্ট করুন:</p>
                         <input
                           type="text"
                           value={formImages[0] || ""}
-                          onChange={(e) => {
-                            const updated = [...formImages];
-                            updated[0] = e.target.value;
-                            setFormImages(updated);
-                          }}
+                          onChange={(e) => { const u = [...formImages]; u[0] = e.target.value; setFormImages(u); }}
                           placeholder="https://res.cloudinary.com/.../img.jpg"
                           className="w-full max-w-md px-3 py-1.5 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-none"
                         />
@@ -816,22 +686,13 @@ export default function ProductsPage() {
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
                     <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                       <h4 className="text-xs font-black text-slate-700">অতিরিক্ত গ্যালারি ইমেজেস</h4>
-                      <label className={`inline-flex items-center gap-1.5 text-xs font-black cursor-pointer transition-all ${
-                        uploadingGallery ? "text-slate-400 cursor-not-allowed" : "text-emerald-600 hover:underline"
-                      }`}>
+                      <label className={`inline-flex items-center gap-1.5 text-xs font-black cursor-pointer transition-all ${uploadingGallery ? "text-slate-400 cursor-not-allowed" : "text-emerald-600 hover:underline"}`}>
                         {uploadingGallery ? (
                           <><div className="w-3 h-3 rounded-full border-2 border-emerald-300 border-t-emerald-600 animate-spin" /><span>আপলোড হচ্ছে...</span></>
                         ) : (
                           <span>+ গ্যালারি ছবি যোগ করুন</span>
                         )}
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          multiple
-                          className="hidden"
-                          disabled={uploadingGallery}
-                          onChange={(e) => handleDirectUpload(e.target.files, "gallery")}
-                        />
+                        <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" disabled={uploadingGallery} onChange={(e) => handleDirectUpload(e.target.files, "gallery")} />
                       </label>
                     </div>
 
@@ -840,12 +701,7 @@ export default function ProductsPage() {
                         {formImages.slice(1).map((imgUrl, index) => (
                           <div key={index} className="relative group border border-slate-200 bg-white rounded-xl overflow-hidden aspect-square flex items-center justify-center">
                             <img src={imgUrl} className="object-cover w-full h-full" alt="Gallery item" />
-                            <button
-                              type="button"
-                              onClick={() => removeFormImage(index + 1)}
-                              className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                              title="Delete"
-                            >
+                            <button type="button" onClick={() => removeFormImage(index + 1)} className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" title="Delete">
                               <X className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -856,141 +712,57 @@ export default function ProductsPage() {
                     )}
                   </div>
                 </div>
-              )}            {/* Gallery Images */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                      <h4 className="text-xs font-black text-slate-700">অতিরিক্ত গ্যালারি ইমেজেস</h4>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenMediaPicker("gallery")}
-                        className="text-xs font-black text-emerald-600 hover:underline"
-                      >
-                        + গ্যালারি ইমেজ যুক্ত করুন
-                      </button>
-                    </div>
-
-                    {formImages.slice(1).length > 0 ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        {formImages.slice(1).map((imgUrl, index) => (
-                          <div key={index} className="relative group border border-slate-200 bg-white rounded-xl overflow-hidden aspect-square flex items-center justify-center">
-                            <img src={imgUrl} className="object-cover w-full h-full" alt="Gallery item" />
-                            <button
-                              type="button"
-                              onClick={() => removeFormImage(index + 1)}
-                              className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                              title="Delete"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-400 font-semibold py-4 text-center">কোনো অতিরিক্ত গ্যালারি ছবি যোগ করা হয়নি।</p>
-                    )}
-                  </div>
-                </div>
               )}
 
+              {/* ── DETAILS TAB ── */}
               {activeTab === "details" && (
                 <div className="space-y-6">
-                  {/* Specifications (Key-Value) */}
+                  {/* Specifications */}
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
                     <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                      <h4 className="text-xs font-black text-slate-700">টেকনিক্যাল স্পেসিফিকেশনস (Key-Value)</h4>
-                      <button
-                        type="button"
-                        onClick={addSpec}
-                        className="text-xs font-black text-emerald-600 hover:underline flex items-center gap-1"
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                        <span>স্পেস যোগ করুন</span>
-                      </button>
+                      <h4 className="text-xs font-black text-slate-700">টেকনিক্যাল স্পেসিফিকেশনস</h4>
+                      <button type="button" onClick={addSpec} className="text-xs font-black text-emerald-600 hover:underline flex items-center gap-1"><PlusCircle className="w-4 h-4" /><span>স্পেস যোগ করুন</span></button>
                     </div>
                     {formSpecs.length > 0 ? (
                       <div className="space-y-3">
                         {formSpecs.map((spec, index) => (
                           <div key={index} className="flex items-center gap-3">
-                            <input
-                              type="text"
-                              value={spec.key}
-                              onChange={(e) => updateSpec(index, "key", e.target.value)}
-                              placeholder="যেমন: প্যাকেজিং, ফর্মুলা, পিএইচ লেভেল"
-                              className="flex-1 px-3 py-2 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-none"
-                            />
-                            <input
-                              type="text"
-                              value={spec.value}
-                              onChange={(e) => updateSpec(index, "value", e.target.value)}
-                              placeholder="যেমন: ২৫০ গ্রাম ক্যান, লিকুইড জেল"
-                              className="flex-1 px-3 py-2 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-none"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeSpec(index)}
-                              className="p-2 text-slate-400 hover:text-red-650 cursor-pointer"
-                            >
-                              <MinusCircle className="w-5 h-5" />
-                            </button>
+                            <input type="text" value={spec.key} onChange={(e) => updateSpec(index, "key", e.target.value)} placeholder="যেমন: প্যাকেজিং" className="flex-1 px-3 py-2 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-none" />
+                            <input type="text" value={spec.value} onChange={(e) => updateSpec(index, "value", e.target.value)} placeholder="যেমন: ২৫০ গ্রাম" className="flex-1 px-3 py-2 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-none" />
+                            <button type="button" onClick={() => removeSpec(index)} className="p-2 text-slate-400 hover:text-red-600 cursor-pointer"><MinusCircle className="w-5 h-5" /></button>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-slate-400 font-semibold py-2 text-center">কোনো স্পেসিফিকেশন অ্যাড করা হয়নি।</p>
+                      <p className="text-xs text-slate-400 font-semibold py-2 text-center">কোনো স্পেসিফিকেশন অ্যাড করা হয়নি।</p>
                     )}
                   </div>
 
-                  {/* Features List */}
+                  {/* Features */}
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
                     <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                      <h4 className="text-xs font-black text-slate-700">প্রোডাক্ট এর মূল ফিচারসমূহ (উপকারিতা)</h4>
-                      <button
-                        type="button"
-                        onClick={addFeature}
-                        className="text-xs font-black text-emerald-600 hover:underline flex items-center gap-1"
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                        <span>ফিচার যোগ করুন</span>
-                      </button>
+                      <h4 className="text-xs font-black text-slate-700">প্রোডাক্ট এর মূল ফিচারসমূহ</h4>
+                      <button type="button" onClick={addFeature} className="text-xs font-black text-emerald-600 hover:underline flex items-center gap-1"><PlusCircle className="w-4 h-4" /><span>ফিচার যোগ করুন</span></button>
                     </div>
                     {formFeatures.length > 0 ? (
                       <div className="space-y-3">
                         {formFeatures.map((feat, index) => (
                           <div key={index} className="flex items-center gap-3">
-                            <input
-                              type="text"
-                              value={feat}
-                              onChange={(e) => updateFeature(index, e.target.value)}
-                              placeholder="যেমন: গাড়ির মেটাল কালার প্রটেক্ট করবে..."
-                              className="flex-1 px-3 py-2 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-none"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeFeature(index)}
-                              className="p-2 text-slate-400 hover:text-red-650 cursor-pointer"
-                            >
-                              <MinusCircle className="w-5 h-5" />
-                            </button>
+                            <input type="text" value={feat} onChange={(e) => updateFeature(index, e.target.value)} placeholder="যেমন: গাড়ির মেটাল কালার প্রটেক্ট করবে..." className="flex-1 px-3 py-2 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-none" />
+                            <button type="button" onClick={() => removeFeature(index)} className="p-2 text-slate-400 hover:text-red-600 cursor-pointer"><MinusCircle className="w-5 h-5" /></button>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-slate-400 font-semibold py-2 text-center">কোনো ফিচার অ্যাড করা হয়নি।</p>
+                      <p className="text-xs text-slate-400 font-semibold py-2 text-center">কোনো ফিচার অ্যাড করা হয়নি।</p>
                     )}
                   </div>
 
-                  {/* How To Use Steps */}
+                  {/* How To Use */}
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
                     <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                      <h4 className="text-xs font-black text-slate-700">ব্যবহার বিধি (ধাপে ধাপে নির্দেশনা)</h4>
-                      <button
-                        type="button"
-                        onClick={addStep}
-                        className="text-xs font-black text-emerald-600 hover:underline flex items-center gap-1"
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                        <span>ধাপ যোগ করুন</span>
-                      </button>
+                      <h4 className="text-xs font-black text-slate-700">ব্যবহার বিধি (ধাপে ধাপে)</h4>
+                      <button type="button" onClick={addStep} className="text-xs font-black text-emerald-600 hover:underline flex items-center gap-1"><PlusCircle className="w-4 h-4" /><span>ধাপ যোগ করুন</span></button>
                     </div>
                     {formSteps.length > 0 ? (
                       <div className="space-y-4">
@@ -998,136 +770,68 @@ export default function ProductsPage() {
                           <div key={index} className="border border-slate-200 bg-white rounded-xl p-3.5 space-y-2 relative">
                             <span className="absolute top-3.5 right-3.5 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-lg">ধাপ - {step.step}</span>
                             <div className="space-y-2 max-w-[85%]">
-                              <input
-                                type="text"
-                                value={step.title}
-                                onChange={(e) => updateStep(index, "title", e.target.value)}
-                                placeholder="ধাপের সংক্ষিপ্ত নাম (যেমন: পানি স্প্রে করুন)"
-                                className="w-full px-3 py-1.5 border border-slate-200 bg-slate-50 rounded-lg text-xs font-bold focus:outline-none"
-                              />
-                              <textarea
-                                value={step.desc}
-                                onChange={(e) => updateStep(index, "desc", e.target.value)}
-                                placeholder="ধাপের বিস্তারিত বিবরণী..."
-                                rows={2}
-                                className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none"
-                              />
+                              <input type="text" value={step.title} onChange={(e) => updateStep(index, "title", e.target.value)} placeholder="ধাপের সংক্ষিপ্ত নাম" className="w-full px-3 py-1.5 border border-slate-200 bg-slate-50 rounded-lg text-xs font-bold focus:outline-none" />
+                              <textarea value={step.desc} onChange={(e) => updateStep(index, "desc", e.target.value)} placeholder="ধাপের বিস্তারিত বিবরণী..." rows={2} className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none" />
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => removeStep(index)}
-                              className="absolute bottom-3 right-3 text-red-600 hover:text-red-800 text-xs font-bold cursor-pointer"
-                            >
-                              ধাপ ডিলিট করুন
-                            </button>
+                            <button type="button" onClick={() => removeStep(index)} className="absolute bottom-3 right-3 text-red-600 hover:text-red-800 text-xs font-bold cursor-pointer">ধাপ ডিলিট করুন</button>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-slate-400 font-semibold py-2 text-center">কোনো ব্যবহার বিধি অ্যাড করা হয়নি।</p>
+                      <p className="text-xs text-slate-400 font-semibold py-2 text-center">কোনো ব্যবহার বিধি অ্যাড করা হয়নি।</p>
+                    )}
+                  </div>
+
+                  {/* FAQs */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <h4 className="text-xs font-black text-slate-700">সচরাচর জিজ্ঞাসা (FAQ)</h4>
+                      <button type="button" onClick={addFaq} className="text-xs font-black text-emerald-600 hover:underline flex items-center gap-1"><PlusCircle className="w-4 h-4" /><span>FAQ যোগ করুন</span></button>
+                    </div>
+                    {formFaqs.length > 0 ? (
+                      <div className="space-y-3">
+                        {formFaqs.map((faq, index) => (
+                          <div key={index} className="border border-slate-200 bg-white rounded-xl p-3 space-y-2 relative">
+                            <input type="text" value={faq.question} onChange={(e) => updateFaq(index, "question", e.target.value)} placeholder="প্রশ্ন লিখুন..." className="w-full px-3 py-1.5 border border-slate-200 bg-slate-50 rounded-lg text-xs font-bold focus:outline-none" />
+                            <textarea value={faq.answer} onChange={(e) => updateFaq(index, "answer", e.target.value)} placeholder="উত্তর লিখুন..." rows={2} className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none" />
+                            <button type="button" onClick={() => removeFaq(index)} className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-600 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 font-semibold py-2 text-center">কোনো FAQ অ্যাড করা হয়নি।</p>
                     )}
                   </div>
                 </div>
               )}
 
+              {/* ── SEO TAB ── */}
               {activeTab === "seo" && (
                 <div className="space-y-4">
-                  {/* SEO Title */}
                   <div className="space-y-1.5">
                     <label className="block text-xs font-black text-slate-700">SEO মেটা টাইটেল</label>
-                    <input
-                      type="text"
-                      value={seoTitle}
-                      onChange={(e) => setSeoTitle(e.target.value)}
-                      placeholder="সার্চ ইঞ্জিনের জন্য টাইটেল..."
-                      className="w-full px-4 py-2.5 border border-slate-200 focus:border-emerald-500 rounded-xl text-sm font-semibold focus:outline-none"
-                    />
+                    <input type="text" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} placeholder="সার্চ ইঞ্জিনের জন্য টাইটেল..." className="w-full px-4 py-2.5 border border-slate-200 focus:border-emerald-500 rounded-xl text-sm font-semibold focus:outline-none" />
                   </div>
-
-                  {/* SEO Description */}
                   <div className="space-y-1.5">
                     <label className="block text-xs font-black text-slate-700">SEO মেটা ডেসক্রিপশন</label>
-                    <textarea
-                      value={seoDescription}
-                      onChange={(e) => setSeoDescription(e.target.value)}
-                      placeholder="সার্চ রেজাল্ট পাতায় টাইটেলের নিচে দেখানোর জন্য বিবরণী..."
-                      rows={4}
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
-                    />
+                    <textarea value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} placeholder="সার্চ রেজাল্ট পাতায় দেখানোর জন্য বিবরণী..." rows={4} className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none" />
                   </div>
                 </div>
               )}
+
             </div>
 
-            {/* Modal Footer Controls */}
+            {/* Modal Footer */}
             <div className="h-20 border-t border-slate-150 px-6 sm:px-8 flex items-center justify-end bg-slate-50 gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs cursor-pointer"
-              >
+              <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs cursor-pointer">
                 বাতিল করুন
               </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 active:scale-[0.98] text-white font-extrabold rounded-xl transition-all text-xs cursor-pointer flex items-center gap-1.5"
-              >
+              <button type="button" onClick={handleSubmit} disabled={submitting} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 active:scale-[0.98] text-white font-extrabold rounded-xl transition-all text-xs cursor-pointer flex items-center gap-1.5">
                 {submitting ? (
-                  <>
-                    <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                    <span>সংরক্ষণ হচ্ছে...</span>
-                  </>
+                  <><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" /><span>সংরক্ষণ হচ্ছে...</span></>
                 ) : (
                   <span>সংরক্ষণ করুন</span>
                 )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Media Picker Overlay Popup */}
-      {showMediaPicker && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl w-full max-w-2xl h-[450px] shadow-2xl p-6 flex flex-col justify-between">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
-              <h4 className="text-sm font-extrabold text-slate-800">মিডিয়া লাইব্রেরি থেকে ছবি নির্বাচন করুন</h4>
-              <button onClick={() => setShowMediaPicker(false)} className="p-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 cursor-pointer">
-                <X className="w-4.5 h-4.5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto py-4">
-              {mediaLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="w-6 h-6 rounded-full border-2 border-emerald-200 border-t-emerald-600 animate-spin" />
-                </div>
-              ) : mediaLibrary.length > 0 ? (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                  {mediaLibrary.map((media, index) => (
-                    <div
-                      key={index}
-                      onClick={() => handleSelectMedia(media.url)}
-                      className="border border-slate-250 hover:border-emerald-500 bg-slate-50 cursor-pointer aspect-square rounded-xl overflow-hidden flex items-center justify-center transition-all"
-                    >
-                      <img src={media.url} className="object-cover w-full h-full" alt="Gallery upload option" />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-slate-400 font-bold text-center py-10">কোনো আপলোড করা মিডিয়া খুঁজে পাওয়া যায়নি। মিডিয়া ট্যাবে গিয়ে নতুন ইমেজ আপলোড করুন।</p>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end border-t border-slate-100 pt-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowMediaPicker(false)}
-                className="px-4 py-2 border border-slate-200 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-50 cursor-pointer"
-              >
-                বন্ধ করুন
               </button>
             </div>
           </div>
