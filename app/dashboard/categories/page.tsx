@@ -36,6 +36,7 @@ export default function CategoriesPage() {
   const [showMediaPicker, setShowMediaPicker] = useState(false);
   const [mediaLibrary, setMediaLibrary] = useState<{ url: string }[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Form Fields
   const [name, setName] = useState("");
@@ -130,6 +131,48 @@ export default function CategoriesPage() {
   const handleSelectMedia = (url: string) => {
     setImage(url);
     setShowMediaPicker(false);
+  };
+
+  const handleDirectUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingImage(true);
+    try {
+      const file = files[0];
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/media`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
+          body: formData,
+        }
+      );
+      const data = await res.json();
+      if (data.success && data.media?.url) {
+        setImage(data.media.url);
+        showAlert({
+          title: "সফল হয়েছে",
+          message: "ছবি সফলভাবে আপলোড করা হয়েছে।",
+          type: "success",
+        });
+      } else {
+        showAlert({
+          title: "ত্রুটি",
+          message: data.message || "আপলোড ব্যর্থ হয়েছে।",
+          type: "error",
+        });
+      }
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      showAlert({
+        title: "ত্রুটি",
+        message: err.message || "আপলোড ব্যর্থ হয়েছে।",
+        type: "error",
+      });
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -372,19 +415,35 @@ export default function CategoriesPage() {
                       <ImageIcon className="w-5 h-5 text-slate-350" />
                     )}
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <button
-                      type="button"
-                      onClick={handleOpenMediaPicker}
-                      className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold rounded-lg transition-all cursor-pointer"
-                    >
-                      মিডিয়া লাইব্রেরি থেকে ছবি সিলেক্ট করুন
-                    </button>
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleOpenMediaPicker}
+                        className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-lg transition-all cursor-pointer"
+                      >
+                        মিডিয়া লাইব্রেরি
+                      </button>
+                      <label className={`inline-flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold rounded-lg transition-all cursor-pointer ${uploadingImage ? "opacity-50 cursor-not-allowed" : ""}`}>
+                        {uploadingImage ? (
+                          <><div className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" /><span>আপলোড হচ্ছে...</span></>
+                        ) : (
+                          <><span>ছবি আপলোড করুন</span></>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          disabled={uploadingImage}
+                          onChange={(e) => handleDirectUpload(e.target.files)}
+                        />
+                      </label>
+                    </div>
                     <input
                       type="text"
                       value={image}
                       onChange={(e) => setImage(e.target.value)}
-                      placeholder="ইমেজ URL পেস্ট করুন..."
+                      placeholder="অথবা সরাসরি ইমেজ URL পেস্ট করুন..."
                       className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none"
                     />
                   </div>
