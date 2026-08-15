@@ -1,0 +1,1104 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { fetchAPI } from "../../../lib/api";
+import { useModal } from "../../../context/ModalContext";
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  Check,
+  X,
+  PlusCircle,
+  MinusCircle,
+  Eye,
+  Settings,
+  Image as ImageIcon,
+  CheckCircle,
+  AlertTriangle,
+} from "lucide-react";
+
+interface Category {
+  _id: string;
+  name: string;
+  slug: string;
+}
+
+interface ProductFeatureStep {
+  step: number;
+  title: string;
+  desc: string;
+}
+
+interface ProductSpecItem {
+  key: string;
+  value: string;
+}
+
+interface ProductFaqItem {
+  question: string;
+  answer: string;
+}
+
+interface Product {
+  _id: string;
+  id: string;
+  title: string;
+  category: string;
+  categoryId: string;
+  price: number;
+  originalPrice?: number;
+  rating: number;
+  reviewsCount: number;
+  images: string[];
+  phone: string;
+  whatsapp: string;
+  unit: string;
+  badge?: string;
+  description: string;
+  features: string[];
+  howToUse: ProductFeatureStep[];
+  specifications: ProductSpecItem[];
+  faqs: ProductFaqItem[];
+  inStock: boolean;
+  stockCount: number;
+  status: "active" | "inactive";
+  featured: boolean;
+  bestSeller: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
+}
+
+export default function ProductsPage() {
+  const { showAlert, showConfirm } = useModal();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalProducts, setTotalProducts] = useState(0);
+
+  // Filter/Search states
+  const [search, setSearch] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Form Modal States
+  const [showModal, setShowModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<"general" | "images" | "details" | "seo">("general");
+
+  // Media Picker States
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [mediaLibrary, setMediaLibrary] = useState<{ url: string }[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [pickerTarget, setPickerTarget] = useState<"main" | "gallery">("main");
+
+  // Dynamic lists in forms
+  const [formFeatures, setFormFeatures] = useState<string[]>([]);
+  const [formSpecs, setFormSpecs] = useState<ProductSpecItem[]>([]);
+  const [formSteps, setFormSteps] = useState<ProductFeatureStep[]>([]);
+  const [formFaqs, setFormFaqs] = useState<ProductFaqItem[]>([]);
+  const [formImages, setFormImages] = useState<string[]>([]);
+
+  // Form Fields
+  const [title, setTitle] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("autocare");
+  const [price, setPrice] = useState("");
+  const [originalPrice, setOriginalPrice] = useState("");
+  const [unit, setUnit] = useState("");
+  const [badge, setBadge] = useState("");
+  const [description, setDescription] = useState("");
+  const [phone, setPhone] = useState("01958-058359");
+  const [whatsapp, setWhatsapp] = useState("8801958058359");
+  const [inStock, setInStock] = useState(true);
+  const [stockCount, setStockCount] = useState("99");
+  const [prodStatus, setProdStatus] = useState<"active" | "inactive">("active");
+  const [featured, setFeatured] = useState(false);
+  const [bestSeller, setBestSeller] = useState(false);
+  const [seoTitle, setSeoTitle] = useState("");
+  const [seoDescription, setSeoDescription] = useState("");
+
+  const loadProducts = async () => {
+    setLoading(true);
+    try {
+      const queryParams = new URLSearchParams({
+        search,
+        categoryId,
+        status,
+        page: page.toString(),
+        limit: "10",
+      });
+
+      const res = await fetchAPI(`/api/products?${queryParams}`);
+      if (res.success) {
+        setProducts(res.products);
+        setTotalProducts(res.total);
+        setTotalPages(res.totalPages);
+      }
+    } catch (error) {
+      console.error("Error loading products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const res = await fetchAPI("/api/categories");
+      if (res.success) {
+        setCategories(res.categories);
+      }
+    } catch (error) {
+      console.error("Error loading categories:", error);
+    }
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, [search, categoryId, status, page]);
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const openAddModal = () => {
+    setEditingProduct(null);
+    setTitle("");
+    setSelectedCategoryId("autocare");
+    setPrice("");
+    setOriginalPrice("");
+    setUnit("");
+    setBadge("");
+    setDescription("");
+    setPhone("01958-058359");
+    setWhatsapp("8801958058359");
+    setInStock(true);
+    setStockCount("99");
+    setProdStatus("active");
+    setFeatured(false);
+    setBestSeller(false);
+    setSeoTitle("");
+    setSeoDescription("");
+
+    setFormFeatures([]);
+    setFormSpecs([]);
+    setFormSteps([]);
+    setFormFaqs([]);
+    setFormImages([]);
+
+    setActiveTab("general");
+    setShowModal(true);
+  };
+
+  const openEditModal = (product: Product) => {
+    setEditingProduct(product);
+    setTitle(product.title);
+    setSelectedCategoryId(product.categoryId);
+    setPrice(product.price.toString());
+    setOriginalPrice(product.originalPrice?.toString() || "");
+    setUnit(product.unit);
+    setBadge(product.badge || "");
+    setDescription(product.description);
+    setPhone(product.phone);
+    setWhatsapp(product.whatsapp);
+    setInStock(product.inStock);
+    setStockCount(product.stockCount.toString());
+    setProdStatus(product.status);
+    setFeatured(product.featured);
+    setBestSeller(product.bestSeller);
+    setSeoTitle(product.seoTitle || "");
+    setSeoDescription(product.seoDescription || "");
+
+    setFormFeatures(product.features || []);
+    setFormSpecs(product.specifications || []);
+    setFormSteps(product.howToUse || []);
+    setFormFaqs(product.faqs || []);
+    setFormImages(product.images || []);
+
+    setActiveTab("general");
+    setShowModal(true);
+  };
+
+  const handleDelete = (id: string) => {
+    showConfirm({
+      title: "প্রোডাক্ট ডিলিট করুন",
+      message: "আপনি কি নিশ্চিতভাবে এই প্রোডাক্টটি ডিলিট করতে চান?",
+      type: "confirm",
+      onConfirm: async () => {
+        try {
+          const res = await fetchAPI(`/api/products/${id}`, { method: "DELETE" });
+          if (res.success) {
+            showAlert({
+              title: "সফল হয়েছে",
+              message: "প্রোডাক্ট সফলভাবে ডিলিট করা হয়েছে।",
+              type: "success",
+            });
+            loadProducts();
+          }
+        } catch (err: any) {
+          showAlert({
+            title: "ত্রুটি",
+            message: err.message || "ডিলিট ব্যর্থ হয়েছে।",
+            type: "error",
+          });
+        }
+      },
+    });
+  };
+
+  const handleOpenMediaPicker = async (target: "main" | "gallery") => {
+    setPickerTarget(target);
+    setShowMediaPicker(true);
+    setMediaLoading(true);
+    try {
+      const res = await fetchAPI("/api/media?limit=100");
+      if (res.success) {
+        setMediaLibrary(res.media);
+      }
+    } catch (err) {
+      console.error("Error loading media:", err);
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
+  const handleSelectMedia = (url: string) => {
+    if (pickerTarget === "main") {
+      setFormImages((prev) => [url, ...prev.slice(1)]);
+    } else {
+      if (!formImages.includes(url)) {
+        setFormImages((prev) => [...prev, url]);
+      }
+    }
+    setShowMediaPicker(false);
+  };
+
+  // Form dynamics helpers
+  const addFeature = () => setFormFeatures((prev) => [...prev, ""]);
+  const updateFeature = (index: number, val: string) => {
+    const updated = [...formFeatures];
+    updated[index] = val;
+    setFormFeatures(updated);
+  };
+  const removeFeature = (index: number) => setFormFeatures((prev) => prev.filter((_, i) => i !== index));
+
+  const addSpec = () => setFormSpecs((prev) => [...prev, { key: "", value: "" }]);
+  const updateSpec = (index: number, field: "key" | "value", val: string) => {
+    const updated = [...formSpecs];
+    updated[index][field] = val;
+    setFormSpecs(updated);
+  };
+  const removeSpec = (index: number) => setFormSpecs((prev) => prev.filter((_, i) => i !== index));
+
+  const addStep = () => setFormSteps((prev) => [...prev, { step: prev.length + 1, title: "", desc: "" }]);
+  const updateStep = (index: number, field: "title" | "desc", val: string) => {
+    const updated = [...formSteps];
+    if (field === "title") updated[index].title = val;
+    else updated[index].desc = val;
+    setFormSteps(updated);
+  };
+  const removeStep = (index: number) => setFormSteps((prev) => prev.filter((_, i) => i !== index).map((s, idx) => ({ ...s, step: idx + 1 })));
+
+  const addFaq = () => setFormFaqs((prev) => [...prev, { question: "", answer: "" }]);
+  const updateFaq = (index: number, field: "question" | "answer", val: string) => {
+    const updated = [...formFaqs];
+    updated[index][field] = val;
+    setFormFaqs(updated);
+  };
+  const removeFaq = (index: number) => setFormFaqs((prev) => prev.filter((_, i) => i !== index));
+
+  const removeFormImage = (index: number) => setFormImages((prev) => prev.filter((_, i) => i !== index));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    const categoryName = categories.find((c) => c.slug === selectedCategoryId)?.name || "অনির্দিষ্ট";
+
+    const payload = {
+      title,
+      category: categoryName,
+      categoryId: selectedCategoryId,
+      price: Number(price),
+      originalPrice: originalPrice ? Number(originalPrice) : undefined,
+      images: formImages.filter((img) => img.trim() !== ""),
+      phone,
+      whatsapp,
+      unit,
+      badge,
+      description,
+      features: formFeatures.filter((f) => f.trim() !== ""),
+      howToUse: formSteps.filter((s) => s.title.trim() !== ""),
+      specifications: formSpecs.filter((s) => s.key.trim() !== ""),
+      faqs: formFaqs.filter((f) => f.question.trim() !== ""),
+      inStock,
+      stockCount: Number(stockCount),
+      status: prodStatus,
+      featured,
+      bestSeller,
+      seoTitle,
+      seoDescription,
+    };
+
+    try {
+      let res;
+      if (editingProduct) {
+        res = await fetchAPI(`/api/products/${editingProduct.id}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+      } else {
+        res = await fetchAPI("/api/products", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (res.success) {
+        showAlert({
+          title: "সফল হয়েছে",
+          message: editingProduct ? "প্রোডাক্ট সফলভাবে আপডেট হয়েছে।" : "নতুন প্রোডাক্ট সফলভাবে যুক্ত হয়েছে।",
+          type: "success",
+        });
+        setShowModal(false);
+        loadProducts();
+      }
+    } catch (err: any) {
+      showAlert({
+        title: "ত্রুটি",
+        message: err.message || "সংরক্ষণ ব্যর্থ হয়েছে।",
+        type: "error",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">প্রোডাক্টস CRUD</h1>
+          <p className="text-sm text-slate-400 font-semibold uppercase">পাবলিক ওয়েবসাইটের সকল প্রোডাক্টের তালিকা ও ব্যবস্থাপনা</p>
+        </div>
+        <button
+          onClick={openAddModal}
+          className="flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-extrabold rounded-xl transition-all shadow-md text-sm cursor-pointer shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          <span>নতুন প্রোডাক্ট যোগ করুন</span>
+        </button>
+      </div>
+
+      {/* Filter Options Panel */}
+      <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-2xs flex flex-col md:flex-row md:items-center gap-4 justify-between">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <Search className="w-4.5 h-4.5" />
+          </div>
+          <input
+            type="text"
+            placeholder="প্রোডাক্ট নাম, ক্যাটাগরি দিয়ে খুঁজুন..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 focus:border-emerald-500 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-all"
+          />
+        </div>
+
+        {/* Category & Status Filters */}
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none text-slate-600"
+          >
+            <option value="">সকল ক্যাটাগরি</option>
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat.slug}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none text-slate-600"
+          >
+            <option value="">সকল স্ট্যাটাস</option>
+            <option value="active">Active (সক্রিয়)</option>
+            <option value="inactive">Inactive (নিষ্ক্রিয়)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Products Table Wrapper */}
+      {loading ? (
+        <div className="flex items-center justify-center min-h-[300px]">
+          <div className="w-8 h-8 rounded-full border-4 border-emerald-200 border-t-emerald-600 animate-spin" />
+        </div>
+      ) : (
+        <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-2xs">
+          <div className="overflow-x-auto min-w-full">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-150 bg-slate-50/50 text-slate-400 text-xs font-black">
+                  <th className="py-4 px-6 w-16">ছবি</th>
+                  <th className="py-4 px-4">প্রোডাক্ট নাম</th>
+                  <th className="py-4 px-4">ক্যাটাগরি</th>
+                  <th className="py-4 px-4 text-center">স্টক কাউন্ট</th>
+                  <th className="py-4 px-4 text-center">স্টক স্ট্যাটাস</th>
+                  <th className="py-4 px-4 text-center">স্ট্যাটাস</th>
+                  <th className="py-4 px-4 text-center">মূল্য</th>
+                  <th className="py-4 px-6 text-center w-24">অ্যাকশন</th>
+                </tr>
+              </thead>
+              <tbody className="text-xs font-bold text-slate-600">
+                {products.length > 0 ? (
+                  products.map((product) => (
+                    <tr key={product._id} className="border-b border-slate-100 hover:bg-slate-50/20 transition-colors">
+                      <td className="py-3 px-6">
+                        <div className="relative w-11 h-11 rounded-lg overflow-hidden border border-slate-200/80 bg-white">
+                          <img
+                            src={product.images[0] || "/placeholder-image.png"}
+                            alt={product.title}
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-sm font-black text-slate-800 block line-clamp-1">{product.title}</span>
+                        <span className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5 block">{product.id}</span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[10px]">{product.category}</span>
+                      </td>
+                      <td className="py-3 px-4 text-center font-black text-slate-700">{product.stockCount}</td>
+                      <td className="py-3 px-4 text-center">
+                        {product.inStock ? (
+                          <span className="inline-flex items-center gap-1 text-green-700 bg-green-50 px-2 py-0.5 rounded-full text-[10px]">
+                            <CheckCircle className="w-3 h-3" />
+                            <span>In Stock</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-red-700 bg-red-50 px-2 py-0.5 rounded-full text-[10px]">
+                            <AlertTriangle className="w-3 h-3" />
+                            <span>Stock Out</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {product.status === "active" ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-extrabold">Active</span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-500 font-extrabold">Inactive</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-center font-black text-slate-800">{product.price}৳</td>
+                      <td className="py-3 px-6 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => openEditModal(product)}
+                            className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-emerald-600 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product.id)}
+                            className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-red-600 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="py-10 text-center text-slate-400">
+                      কোনো প্রোডাক্ট খুঁজে পাওয়া যায়নি।
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="p-5 border-t border-slate-150 bg-slate-50/50 flex items-center justify-between">
+              <span className="text-xs text-slate-400 font-bold">
+                মোট {totalProducts} টি প্রোডাক্ট এর মধ্যে {(page - 1) * 10 + 1}-{Math.min(page * 10, totalProducts)} দেখাচ্ছে
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 disabled:opacity-50 text-slate-500 text-xs font-bold hover:bg-white"
+                >
+                  পূর্ববর্তী
+                </button>
+                <span className="text-xs font-bold text-slate-600 px-3">{page}/{totalPages}</span>
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 disabled:opacity-50 text-slate-500 text-xs font-bold hover:bg-white"
+                >
+                  পরবর্তী
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* CRUD Product Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/60 backdrop-blur-xs">
+          {/* Backdrop Closer */}
+          <div className="absolute inset-0" onClick={() => setShowModal(false)} />
+
+          <div className="relative w-full max-w-3xl h-full bg-white shadow-2xl flex flex-col justify-between z-10 animate-slide-in-right">
+            {/* Modal Header */}
+            <div className="h-20 border-b border-slate-150 px-6 sm:px-8 flex items-center justify-between bg-slate-50 shrink-0">
+              <div>
+                <h3 className="text-lg font-black text-slate-800">
+                  {editingProduct ? "প্রোডাক্ট এডিট করুন" : "নতুন প্রোডাক্ট যোগ করুন"}
+                </h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                  {editingProduct ? `ID: ${editingProduct.id}` : "প্রোডাক্ট ডাটাবেস ফর্ম"}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Tabs Navigator */}
+            <div className="flex border-b border-slate-150 bg-slate-50/50 px-6 sm:px-8 shrink-0 overflow-x-auto">
+              {(["general", "images", "details", "seo"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`py-3.5 px-4 text-xs font-black capitalize transition-all border-b-2 cursor-pointer ${
+                    activeTab === tab
+                      ? "border-emerald-600 text-emerald-700"
+                      : "border-transparent text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  {tab === "general" ? "সাধারন তথ্য" : tab === "images" ? "ছবি সমূহ" : tab === "details" ? "ডিটেইলস ও ফিচারস" : "SEO মেটা"}
+                </button>
+              ))}
+            </div>
+
+            {/* Modal Body Scrolling */}
+            <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+              {activeTab === "general" && (
+                <div className="space-y-4">
+                  {/* Title */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-black text-slate-700">প্রোডাক্ট এর নাম <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="যেমন: বাবল বস কালার গার্ড ফোমিং জেল (৫৫০ মিলি)"
+                      required
+                      className="w-full px-4 py-2.5 border border-slate-200 focus:border-emerald-500 rounded-xl text-sm font-semibold focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Category & Unit */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700">ক্যাটাগরি <span className="text-red-500">*</span></label>
+                      <select
+                        value={selectedCategoryId}
+                        onChange={(e) => setSelectedCategoryId(e.target.value)}
+                        className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
+                      >
+                        {categories.map((cat) => (
+                          <option key={cat._id} value={cat.slug}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700">প্যাক সাইজ / ইউনিট <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={unit}
+                        onChange={(e) => setUnit(e.target.value)}
+                        placeholder="যেমন: ৫৫০ মিলি বোটল (১টি মাইক্রোফাইবার ফ্রি)"
+                        required
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Price & Original Price */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700">বিক্রয় মূল্য (৳) <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        placeholder="350"
+                        required
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700">পূর্বের মূল্য / ডিসকাউন্ট মূল্য (৳)</label>
+                      <input
+                        type="number"
+                        value={originalPrice}
+                        onChange={(e) => setOriginalPrice(e.target.value)}
+                        placeholder="450"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Stock Count & Badge */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700">স্টক পরিমাণ</label>
+                      <input
+                        type="number"
+                        value={stockCount}
+                        onChange={(e) => setStockCount(e.target.value)}
+                        placeholder="99"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700">ব্যাজ / অফার লেবেল</label>
+                      <input
+                        type="text"
+                        value={badge}
+                        onChange={(e) => setBadge(e.target.value)}
+                        placeholder="যেমন: হট ডিল, বেস্ট সেলার, পপুলার"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Hotlines */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700">অর্ডার হটলাইন ফোন</label>
+                      <input
+                        type="text"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="01958-058359"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700">অর্ডার হোয়াটসঅ্যাপ নম্বর</label>
+                      <input
+                        type="text"
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(e.target.value)}
+                        placeholder="8801958058359"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Toggles */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-3">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={inStock}
+                        onChange={(e) => setInStock(e.target.checked)}
+                        className="w-4.5 h-4.5 text-emerald-600 rounded-md border-slate-350 focus:ring-emerald-100"
+                      />
+                      <span className="text-xs font-black text-slate-700">ইন স্টক (In Stock)</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={featured}
+                        onChange={(e) => setFeatured(e.target.checked)}
+                        className="w-4.5 h-4.5 text-emerald-600 rounded-md border-slate-350 focus:ring-emerald-100"
+                      />
+                      <span className="text-xs font-black text-slate-700">ফিচার্ড (Featured)</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={bestSeller}
+                        onChange={(e) => setBestSeller(e.target.checked)}
+                        className="w-4.5 h-4.5 text-emerald-600 rounded-md border-slate-350 focus:ring-emerald-100"
+                      />
+                      <span className="text-xs font-black text-slate-700">বেস্ট সেলার (Best Seller)</span>
+                    </label>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-slate-700 shrink-0">স্ট্যাটাস:</span>
+                      <select
+                        value={prodStatus}
+                        onChange={(e) => setProdStatus(e.target.value as any)}
+                        className="px-2 py-1 border border-slate-200 rounded-lg text-xs font-bold focus:outline-none"
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div className="space-y-1.5 pt-2">
+                    <label className="block text-xs font-black text-slate-700">প্রোডাক্ট বিবরণী (Short Description) <span className="text-red-500">*</span></label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="প্রোডাক্টটি সম্পর্কে ১-২ লাইনের বিবরণী প্রদান করুন..."
+                      rows={3}
+                      required
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "images" && (
+                <div className="space-y-6">
+                  {/* Main Product Image */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                    <h4 className="text-xs font-black text-slate-700">প্রোডাক্ট কভার ইমেজ (Main Image)</h4>
+                    <div className="flex items-center gap-6">
+                      <div className="relative w-28 h-28 border-2 border-dashed border-slate-200 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0">
+                        {formImages[0] ? (
+                          <img src={formImages[0]} className="object-cover w-full h-full" alt="Cover" />
+                        ) : (
+                          <ImageIcon className="w-8 h-8 text-slate-300" />
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenMediaPicker("main")}
+                          className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
+                        >
+                          মিডিয়া লাইব্রেরি থেকে ইমেজ সিলেক্ট করুন
+                        </button>
+                        <p className="text-[10px] text-slate-400 font-semibold">অথবা নিচে সরাসরি ইমেজের URL পেস্ট করতে পারেন।</p>
+                        <input
+                          type="text"
+                          value={formImages[0] || ""}
+                          onChange={(e) => {
+                            const updated = [...formImages];
+                            updated[0] = e.target.value;
+                            setFormImages(updated);
+                          }}
+                          placeholder="https://cloudinary.com/.../img.jpg"
+                          className="w-full max-w-md px-3 py-1.5 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Gallery Images */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <h4 className="text-xs font-black text-slate-700">অতিরিক্ত গ্যালারি ইমেজেস</h4>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenMediaPicker("gallery")}
+                        className="text-xs font-black text-emerald-600 hover:underline"
+                      >
+                        + গ্যালারি ইমেজ যুক্ত করুন
+                      </button>
+                    </div>
+
+                    {formImages.slice(1).length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        {formImages.slice(1).map((imgUrl, index) => (
+                          <div key={index} className="relative group border border-slate-200 bg-white rounded-xl overflow-hidden aspect-square flex items-center justify-center">
+                            <img src={imgUrl} className="object-cover w-full h-full" alt="Gallery item" />
+                            <button
+                              type="button"
+                              onClick={() => removeFormImage(index + 1)}
+                              className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                              title="Delete"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 font-semibold py-4 text-center">কোনো অতিরিক্ত গ্যালারি ছবি যোগ করা হয়নি।</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "details" && (
+                <div className="space-y-6">
+                  {/* Specifications (Key-Value) */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <h4 className="text-xs font-black text-slate-700">টেকনিক্যাল স্পেসিফিকেশনস (Key-Value)</h4>
+                      <button
+                        type="button"
+                        onClick={addSpec}
+                        className="text-xs font-black text-emerald-600 hover:underline flex items-center gap-1"
+                      >
+                        <PlusCircle className="w-4 h-4" />
+                        <span>স্পেস যোগ করুন</span>
+                      </button>
+                    </div>
+                    {formSpecs.length > 0 ? (
+                      <div className="space-y-3">
+                        {formSpecs.map((spec, index) => (
+                          <div key={index} className="flex items-center gap-3">
+                            <input
+                              type="text"
+                              value={spec.key}
+                              onChange={(e) => updateSpec(index, "key", e.target.value)}
+                              placeholder="যেমন: প্যাকেজিং, ফর্মুলা, পিএইচ লেভেল"
+                              className="flex-1 px-3 py-2 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-none"
+                            />
+                            <input
+                              type="text"
+                              value={spec.value}
+                              onChange={(e) => updateSpec(index, "value", e.target.value)}
+                              placeholder="যেমন: ২৫০ গ্রাম ক্যান, লিকুইড জেল"
+                              className="flex-1 px-3 py-2 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeSpec(index)}
+                              className="p-2 text-slate-400 hover:text-red-650 cursor-pointer"
+                            >
+                              <MinusCircle className="w-5 h-5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 font-semibold py-2 text-center">কোনো স্পেসিফিকেশন অ্যাড করা হয়নি।</p>
+                    )}
+                  </div>
+
+                  {/* Features List */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <h4 className="text-xs font-black text-slate-700">প্রোডাক্ট এর মূল ফিচারসমূহ (উপকারিতা)</h4>
+                      <button
+                        type="button"
+                        onClick={addFeature}
+                        className="text-xs font-black text-emerald-600 hover:underline flex items-center gap-1"
+                      >
+                        <PlusCircle className="w-4 h-4" />
+                        <span>ফিচার যোগ করুন</span>
+                      </button>
+                    </div>
+                    {formFeatures.length > 0 ? (
+                      <div className="space-y-3">
+                        {formFeatures.map((feat, index) => (
+                          <div key={index} className="flex items-center gap-3">
+                            <input
+                              type="text"
+                              value={feat}
+                              onChange={(e) => updateFeature(index, e.target.value)}
+                              placeholder="যেমন: গাড়ির মেটাল কালার প্রটেক্ট করবে..."
+                              className="flex-1 px-3 py-2 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeFeature(index)}
+                              className="p-2 text-slate-400 hover:text-red-650 cursor-pointer"
+                            >
+                              <MinusCircle className="w-5 h-5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 font-semibold py-2 text-center">কোনো ফিচার অ্যাড করা হয়নি।</p>
+                    )}
+                  </div>
+
+                  {/* How To Use Steps */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <h4 className="text-xs font-black text-slate-700">ব্যবহার বিধি (ধাপে ধাপে নির্দেশনা)</h4>
+                      <button
+                        type="button"
+                        onClick={addStep}
+                        className="text-xs font-black text-emerald-600 hover:underline flex items-center gap-1"
+                      >
+                        <PlusCircle className="w-4 h-4" />
+                        <span>ধাপ যোগ করুন</span>
+                      </button>
+                    </div>
+                    {formSteps.length > 0 ? (
+                      <div className="space-y-4">
+                        {formSteps.map((step, index) => (
+                          <div key={index} className="border border-slate-200 bg-white rounded-xl p-3.5 space-y-2 relative">
+                            <span className="absolute top-3.5 right-3.5 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-lg">ধাপ - {step.step}</span>
+                            <div className="space-y-2 max-w-[85%]">
+                              <input
+                                type="text"
+                                value={step.title}
+                                onChange={(e) => updateStep(index, "title", e.target.value)}
+                                placeholder="ধাপের সংক্ষিপ্ত নাম (যেমন: পানি স্প্রে করুন)"
+                                className="w-full px-3 py-1.5 border border-slate-200 bg-slate-50 rounded-lg text-xs font-bold focus:outline-none"
+                              />
+                              <textarea
+                                value={step.desc}
+                                onChange={(e) => updateStep(index, "desc", e.target.value)}
+                                placeholder="ধাপের বিস্তারিত বিবরণী..."
+                                rows={2}
+                                className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium focus:outline-none"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeStep(index)}
+                              className="absolute bottom-3 right-3 text-red-600 hover:text-red-800 text-xs font-bold cursor-pointer"
+                            >
+                              ধাপ ডিলিট করুন
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 font-semibold py-2 text-center">কোনো ব্যবহার বিধি অ্যাড করা হয়নি।</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "seo" && (
+                <div className="space-y-4">
+                  {/* SEO Title */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-black text-slate-700">SEO মেটা টাইটেল</label>
+                    <input
+                      type="text"
+                      value={seoTitle}
+                      onChange={(e) => setSeoTitle(e.target.value)}
+                      placeholder="সার্চ ইঞ্জিনের জন্য টাইটেল..."
+                      className="w-full px-4 py-2.5 border border-slate-200 focus:border-emerald-500 rounded-xl text-sm font-semibold focus:outline-none"
+                    />
+                  </div>
+
+                  {/* SEO Description */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-black text-slate-700">SEO মেটা ডেসক্রিপশন</label>
+                    <textarea
+                      value={seoDescription}
+                      onChange={(e) => setSeoDescription(e.target.value)}
+                      placeholder="সার্চ রেজাল্ট পাতায় টাইটেলের নিচে দেখানোর জন্য বিবরণী..."
+                      rows={4}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer Controls */}
+            <div className="h-20 border-t border-slate-150 px-6 sm:px-8 flex items-center justify-end bg-slate-50 gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs cursor-pointer"
+              >
+                বাতিল করুন
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 active:scale-[0.98] text-white font-extrabold rounded-xl transition-all text-xs cursor-pointer flex items-center gap-1.5"
+              >
+                {submitting ? (
+                  <>
+                    <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                    <span>সংরক্ষণ হচ্ছে...</span>
+                  </>
+                ) : (
+                  <span>সংরক্ষণ করুন</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Media Picker Overlay Popup */}
+      {showMediaPicker && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl w-full max-w-2xl h-[450px] shadow-2xl p-6 flex flex-col justify-between">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+              <h4 className="text-sm font-extrabold text-slate-800">মিডিয়া লাইব্রেরি থেকে ছবি নির্বাচন করুন</h4>
+              <button onClick={() => setShowMediaPicker(false)} className="p-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 cursor-pointer">
+                <X className="w-4.5 h-4.5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-4">
+              {mediaLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="w-6 h-6 rounded-full border-2 border-emerald-200 border-t-emerald-600 animate-spin" />
+                </div>
+              ) : mediaLibrary.length > 0 ? (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                  {mediaLibrary.map((media, index) => (
+                    <div
+                      key={index}
+                      onClick={() => handleSelectMedia(media.url)}
+                      className="border border-slate-250 hover:border-emerald-500 bg-slate-50 cursor-pointer aspect-square rounded-xl overflow-hidden flex items-center justify-center transition-all"
+                    >
+                      <img src={media.url} className="object-cover w-full h-full" alt="Gallery upload option" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 font-bold text-center py-10">কোনো আপলোড করা মিডিয়া খুঁজে পাওয়া যায়নি। মিডিয়া ট্যাবে গিয়ে নতুন ইমেজ আপলোড করুন।</p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end border-t border-slate-100 pt-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowMediaPicker(false)}
+                className="px-4 py-2 border border-slate-200 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-50 cursor-pointer"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
