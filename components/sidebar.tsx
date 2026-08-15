@@ -15,7 +15,6 @@ import {
   BookOpen,
   PhoneCall,
   Globe,
-  FolderOpen,
   Settings,
   UserCheck,
   LogOut,
@@ -41,7 +40,6 @@ export default function Sidebar({ onClose }: SidebarProps) {
     { name: "আমাদের সম্পর্কে", href: "/dashboard/about", icon: BookOpen, roles: ["super-admin", "admin"] },
     { name: "যোগাযোগ & সোশ্যাল", href: "/dashboard/contact", icon: PhoneCall, roles: ["super-admin", "admin"] },
     { name: "SEO কনফিগ", href: "/dashboard/seo", icon: Globe, roles: ["super-admin", "admin"] },
-    { name: "মিডিয়া লাইব্রেরি", href: "/dashboard/media", icon: FolderOpen, roles: ["super-admin", "admin", "editor"] },
     { name: "গ্লোবাল সেটিংস", href: "/dashboard/settings", icon: Settings, roles: ["super-admin"] },
     { name: "অ্যাডমিন ইউজারস", href: "/dashboard/admin-users", icon: UserCheck, roles: ["super-admin"] },
   ];

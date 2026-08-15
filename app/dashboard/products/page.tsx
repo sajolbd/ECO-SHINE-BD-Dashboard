@@ -90,11 +90,9 @@ export default function ProductsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"general" | "images" | "details" | "seo">("general");
 
-  // Media Picker States
-  const [showMediaPicker, setShowMediaPicker] = useState(false);
-  const [mediaLibrary, setMediaLibrary] = useState<{ url: string }[]>([]);
-  const [mediaLoading, setMediaLoading] = useState(false);
-  const [pickerTarget, setPickerTarget] = useState<"main" | "gallery">("main");
+  // Direct Upload States
+  const [uploadingMain, setUploadingMain] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
 
   // Dynamic lists in forms
   const [formFeatures, setFormFeatures] = useState<string[]>([]);
@@ -249,31 +247,36 @@ export default function ProductsPage() {
     });
   };
 
-  const handleOpenMediaPicker = async (target: "main" | "gallery") => {
-    setPickerTarget(target);
-    setShowMediaPicker(true);
-    setMediaLoading(true);
+  const handleDirectUpload = async (files: FileList | null, target: "main" | "gallery") => {
+    if (!files || files.length === 0) return;
+    if (target === "main") setUploadingMain(true);
+    else setUploadingGallery(true);
     try {
-      const res = await fetchAPI("/api/media?limit=100");
-      if (res.success) {
-        setMediaLibrary(res.media);
+      const uploadedUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("image", file);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/media`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
+          body: formData,
+        });
+        const data = await res.json();
+        if (data.success && data.media?.url) {
+          uploadedUrls.push(data.media.url);
+        }
+      }
+      if (target === "main") {
+        setFormImages((prev) => [uploadedUrls[0] || prev[0], ...prev.slice(1)]);
+      } else {
+        setFormImages((prev) => [...prev, ...uploadedUrls]);
       }
     } catch (err) {
-      console.error("Error loading media:", err);
+      console.error("Upload error:", err);
     } finally {
-      setMediaLoading(false);
+      if (target === "main") setUploadingMain(false);
+      else setUploadingGallery(false);
     }
-  };
-
-  const handleSelectMedia = (url: string) => {
-    if (pickerTarget === "main") {
-      setFormImages((prev) => [url, ...prev.slice(1)]);
-    } else {
-      if (!formImages.includes(url)) {
-        setFormImages((prev) => [...prev, url]);
-      }
-    }
-    setShowMediaPicker(false);
   };
 
   // Form dynamics helpers
@@ -752,40 +755,7 @@ export default function ProductsPage() {
                         type="checkbox"
                         checked={bestSeller}
                         onChange={(e) => setBestSeller(e.target.checked)}
-                        className="w-4.5 h-4.5 text-emerald-600 rounded-md border-slate-350 focus:ring-emerald-100"
-                      />
-                      <span className="text-xs font-black text-slate-700">বেস্ট সেলার (Best Seller)</span>
-                    </label>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black text-slate-700 shrink-0">স্ট্যাটাস:</span>
-                      <select
-                        value={prodStatus}
-                        onChange={(e) => setProdStatus(e.target.value as any)}
-                        className="px-2 py-1 border border-slate-200 rounded-lg text-xs font-bold focus:outline-none"
-                      >
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <div className="space-y-1.5 pt-2">
-                    <label className="block text-xs font-black text-slate-700">প্রোডাক্ট বিবরণী (Short Description) <span className="text-red-500">*</span></label>
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="প্রোডাক্টটি সম্পর্কে ১-২ লাইনের বিবরণী প্রদান করুন..."
-                      rows={3}
-                      required
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "images" && (
+                            {activeTab === "images" && (
                 <div className="space-y-6">
                   {/* Main Product Image */}
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
@@ -793,20 +763,40 @@ export default function ProductsPage() {
                     <div className="flex items-center gap-6">
                       <div className="relative w-28 h-28 border-2 border-dashed border-slate-200 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0">
                         {formImages[0] ? (
-                          <img src={formImages[0]} className="object-cover w-full h-full" alt="Cover" />
+                          <>
+                            <img src={formImages[0]} className="object-cover w-full h-full" alt="Cover" />
+                            <button
+                              type="button"
+                              onClick={() => removeFormImage(0)}
+                              className="absolute top-1 right-1 p-0.5 rounded-md bg-red-600 text-white cursor-pointer"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </>
                         ) : (
                           <ImageIcon className="w-8 h-8 text-slate-300" />
                         )}
                       </div>
-                      <div className="space-y-2">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenMediaPicker("main")}
-                          className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
-                        >
-                          মিডিয়া লাইব্রেরি থেকে ইমেজ সিলেক্ট করুন
-                        </button>
-                        <p className="text-[10px] text-slate-400 font-semibold">অথবা নিচে সরাসরি ইমেজের URL পেস্ট করতে পারেন।</p>
+                      <div className="space-y-3">
+                        <label className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs ${
+                          uploadingMain
+                            ? "bg-slate-300 text-slate-500 cursor-not-allowed"
+                            : "bg-slate-900 hover:bg-slate-800 text-white"
+                        }`}>
+                          {uploadingMain ? (
+                            <><div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /><span>আপলোড হচ্ছে...</span></>
+                          ) : (
+                            <><ImageIcon className="w-3.5 h-3.5" /><span>ছবি আপলোড করুন</span></>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            disabled={uploadingMain}
+                            onChange={(e) => handleDirectUpload(e.target.files, "main")}
+                          />
+                        </label>
+                        <p className="text-[10px] text-slate-400 font-semibold">অথবা সরাসরি ইমেজ URL পেস্ট করুন:</p>
                         <input
                           type="text"
                           value={formImages[0] || ""}
@@ -815,7 +805,7 @@ export default function ProductsPage() {
                             updated[0] = e.target.value;
                             setFormImages(updated);
                           }}
-                          placeholder="https://cloudinary.com/.../img.jpg"
+                          placeholder="https://res.cloudinary.com/.../img.jpg"
                           className="w-full max-w-md px-3 py-1.5 border border-slate-200 bg-white rounded-lg text-xs font-semibold focus:outline-none"
                         />
                       </div>
@@ -823,6 +813,50 @@ export default function ProductsPage() {
                   </div>
 
                   {/* Gallery Images */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <h4 className="text-xs font-black text-slate-700">অতিরিক্ত গ্যালারি ইমেজেস</h4>
+                      <label className={`inline-flex items-center gap-1.5 text-xs font-black cursor-pointer transition-all ${
+                        uploadingGallery ? "text-slate-400 cursor-not-allowed" : "text-emerald-600 hover:underline"
+                      }`}>
+                        {uploadingGallery ? (
+                          <><div className="w-3 h-3 rounded-full border-2 border-emerald-300 border-t-emerald-600 animate-spin" /><span>আপলোড হচ্ছে...</span></>
+                        ) : (
+                          <span>+ গ্যালারি ছবি যোগ করুন</span>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          multiple
+                          className="hidden"
+                          disabled={uploadingGallery}
+                          onChange={(e) => handleDirectUpload(e.target.files, "gallery")}
+                        />
+                      </label>
+                    </div>
+
+                    {formImages.slice(1).length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        {formImages.slice(1).map((imgUrl, index) => (
+                          <div key={index} className="relative group border border-slate-200 bg-white rounded-xl overflow-hidden aspect-square flex items-center justify-center">
+                            <img src={imgUrl} className="object-cover w-full h-full" alt="Gallery item" />
+                            <button
+                              type="button"
+                              onClick={() => removeFormImage(index + 1)}
+                              className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                              title="Delete"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 font-semibold py-4 text-center">কোনো অতিরিক্ত গ্যালারি ছবি যোগ করা হয়নি।</p>
+                    )}
+                  </div>
+                </div>
+              )}            {/* Gallery Images */}
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
                     <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                       <h4 className="text-xs font-black text-slate-700">অতিরিক্ত গ্যালারি ইমেজেস</h4>
