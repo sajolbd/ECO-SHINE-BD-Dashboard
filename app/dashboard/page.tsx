@@ -30,6 +30,7 @@ interface Stats {
   completedOrders: number;
   totalCustomers: number;
   totalRevenue: number;
+  grossProfit: number;
 }
 
 interface RecentOrder {
@@ -129,15 +130,24 @@ export default function DashboardPage() {
       </div>
 
       {/* Revenue Banner */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-6 md:p-8 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-6 md:p-8 text-white shadow-lg grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
         <div className="space-y-2">
-          <p className="text-emerald-100 text-xs sm:text-sm font-extrabold uppercase tracking-wider">মোট মোট বিক্রয়মূল্য (মোট আয়)</p>
-          <h2 className="text-3xl sm:text-5xl font-black tracking-tight">
+          <p className="text-emerald-100 text-xs sm:text-sm font-extrabold uppercase tracking-wider">মোট বিক্রয় (ডেলিভারি ফিসহ)</p>
+          <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
             {stats?.totalRevenue.toLocaleString("bn-BD")}৳
           </h2>
-          <p className="text-emerald-100/80 text-xs font-medium">* ক্যানসেল করা অর্ডার ব্যতীত সকল অর্ডারের মোট যোগফল</p>
+          <p className="text-emerald-100/85 text-[10px] font-medium">* ক্যানসেল করা অর্ডার ব্যতীত মোট আয়</p>
         </div>
-        <div className="p-4 bg-white/10 rounded-2xl shrink-0 backdrop-blur-md border border-white/10 flex items-center gap-3">
+
+        <div className="space-y-2 md:border-l md:border-white/20 md:pl-6">
+          <p className="text-emerald-100 text-xs sm:text-sm font-extrabold uppercase tracking-wider">গ্রস প্রফিট (ডেলিভারি ফি বাদে)</p>
+          <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
+            {stats?.grossProfit !== undefined ? stats.grossProfit.toLocaleString("bn-BD") : "0"}৳
+          </h2>
+          <p className="text-emerald-100/85 text-[10px] font-medium">* মোট বিক্রয়মূল্য - ক্রয়মূল্য</p>
+        </div>
+
+        <div className="p-4 bg-white/10 rounded-2xl md:ml-auto shrink-0 backdrop-blur-md border border-white/10 flex items-center gap-3 w-fit">
           <TrendingUp className="w-8 h-8 text-emerald-200 animate-pulse" />
           <div>
             <p className="text-xs font-bold text-emerald-100">লাইভ ট্র্যাকিং</p>

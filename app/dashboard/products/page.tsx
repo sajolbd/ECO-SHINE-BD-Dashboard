@@ -45,6 +45,7 @@ interface Product {
   category: string;
   categoryId: string;
   price: number;
+  costPrice: number;
   originalPrice?: number;
   rating: number;
   reviewsCount: number;
@@ -102,6 +103,7 @@ export default function ProductsPage() {
   const [title, setTitle] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("autocare");
   const [price, setPrice] = useState("");
+  const [costPrice, setCostPrice] = useState("");
   const [originalPrice, setOriginalPrice] = useState("");
   const [unit, setUnit] = useState("");
   const [badge, setBadge] = useState("");
@@ -164,6 +166,7 @@ export default function ProductsPage() {
     setTitle("");
     setSelectedCategoryId("autocare");
     setPrice("");
+    setCostPrice("");
     setOriginalPrice("");
     setUnit("");
     setBadge("");
@@ -191,6 +194,7 @@ export default function ProductsPage() {
     setTitle(product.title);
     setSelectedCategoryId(product.categoryId);
     setPrice(product.price.toString());
+    setCostPrice(product.costPrice?.toString() || "");
     setOriginalPrice(product.originalPrice?.toString() || "");
     setUnit(product.unit);
     setBadge(product.badge || "");
@@ -315,6 +319,7 @@ export default function ProductsPage() {
       category: categoryName,
       categoryId: selectedCategoryId,
       price: Number(price),
+      costPrice: Number(costPrice),
       originalPrice: originalPrice ? Number(originalPrice) : undefined,
       images: formImages.filter((img) => img.trim() !== ""),
       phone,
@@ -580,10 +585,14 @@ export default function ProductsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-black text-slate-700">বিক্রয় মূল্য (৳) <span className="text-red-500">*</span></label>
                       <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="350" required className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700">ক্রয়মূল্য (৳) <span className="text-red-500">*</span></label>
+                      <input type="number" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} placeholder="200" required className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none" />
                     </div>
                     <div className="space-y-1.5">
                       <label className="block text-xs font-black text-slate-700">পূর্বের মূল্য / ডিসকাউন্ট মূল্য (৳)</label>
