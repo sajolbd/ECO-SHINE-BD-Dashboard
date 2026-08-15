@@ -40,6 +40,7 @@ export default function BannersPage() {
   const [mediaLibrary, setMediaLibrary] = useState<{ url: string }[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<"desktop" | "mobile">("desktop");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Form Fields
   const [title, setTitle] = useState("");
@@ -137,6 +138,40 @@ export default function BannersPage() {
       setImageMobile(selectedUrl);
     }
     setShowMediaPicker(false);
+  };
+
+  const handleDirectUpload = async (files: FileList | null, target: "desktop" | "mobile") => {
+    if (!files || files.length === 0) return;
+    setUploadingImage(true);
+    try {
+      const file = files[0];
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/media`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
+          body: formData,
+        }
+      );
+      const data = await res.json();
+      if (data.success && data.media?.url) {
+        if (target === "desktop") {
+          setImageDesktop(data.media.url);
+        } else {
+          setImageMobile(data.media.url);
+        }
+        alert("ছবি সফলভাবে আপলোড করা হয়েছে।");
+      } else {
+        alert(data.message || "আপলোড ব্যর্থ হয়েছে।");
+      }
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      alert(err.message || "আপলোড ব্যর্থ হয়েছে।");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -361,19 +396,35 @@ export default function BannersPage() {
                       <ImageIcon className="w-5 h-5 text-slate-350" />
                     )}
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenMediaPicker("desktop")}
-                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer"
-                    >
-                      মিডিয়া লাইব্রেরি থেকে ইমেজ সিলেক্ট করুন
-                    </button>
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenMediaPicker("desktop")}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded-lg transition-all cursor-pointer"
+                      >
+                        মিডিয়া লাইব্রেরি
+                      </button>
+                      <label className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer ${uploadingImage ? "opacity-50 cursor-not-allowed" : ""}`}>
+                        {uploadingImage ? (
+                          <><div className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" /><span>আপলোড হচ্ছে...</span></>
+                        ) : (
+                          <><span>ছবি আপলোড করুন</span></>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          disabled={uploadingImage}
+                          onChange={(e) => handleDirectUpload(e.target.files, "desktop")}
+                        />
+                      </label>
+                    </div>
                     <input
                       type="text"
                       value={imageDesktop}
                       onChange={(e) => setImageDesktop(e.target.value)}
-                      placeholder="ডেস্কটপ ব্যানার ইমেজ URL..."
+                      placeholder="অথবা সরাসরি ডেস্কটপ ব্যানার ইমেজ URL..."
                       required
                       className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none"
                     />
@@ -392,19 +443,35 @@ export default function BannersPage() {
                       <ImageIcon className="w-5 h-5 text-slate-350" />
                     )}
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenMediaPicker("mobile")}
-                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer"
-                    >
-                      মিডিয়া লাইব্রেরি থেকে ইমেজ সিলেক্ট করুন
-                    </button>
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenMediaPicker("mobile")}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded-lg transition-all cursor-pointer"
+                      >
+                        মিডিয়া লাইব্রেরি
+                      </button>
+                      <label className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer ${uploadingImage ? "opacity-50 cursor-not-allowed" : ""}`}>
+                        {uploadingImage ? (
+                          <><div className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" /><span>আপলোড হচ্ছে...</span></>
+                        ) : (
+                          <><span>ছবি আপলোড করুন</span></>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          disabled={uploadingImage}
+                          onChange={(e) => handleDirectUpload(e.target.files, "mobile")}
+                        />
+                      </label>
+                    </div>
                     <input
                       type="text"
                       value={imageMobile}
                       onChange={(e) => setImageMobile(e.target.value)}
-                      placeholder="মোবাইল ব্যানার ইমেজ URL..."
+                      placeholder="অথবা সরাসরি মোবাইল ব্যানার ইমেজ URL..."
                       required
                       className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none"
                     />
