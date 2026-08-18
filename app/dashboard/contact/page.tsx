@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { fetchAPI } from "../../../lib/api";
+import { useModal } from "../../../context/ModalContext";
 import { Save, Phone, Mail, MapPin, Clock } from "lucide-react";
 
 const Facebook = (props: React.SVGProps<SVGSVGElement>) => (
@@ -26,6 +27,7 @@ const Youtube = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export default function ContactCMSPage() {
+  const { showAlert } = useModal();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -87,11 +89,11 @@ export default function ContactCMSPage() {
       });
 
       if (res.success) {
-        alert("যোগাযোগ তথ্য সফলভাবে সেভ করা হয়েছে।");
+        showAlert({ title: "সফল হয়েছে", message: "যোগাযোগ তথ্য সফলভাবে সেভ করা হয়েছে।", type: "success" });
         loadData();
       }
     } catch (err: any) {
-      alert(err.message || "সংরক্ষণ ব্যর্থ হয়েছে।");
+      showAlert({ title: "ত্রুটি", message: err.message || "সংরক্ষণ ব্যর্থ হয়েছে।", type: "error" });
     } finally {
       setSaving(false);
     }

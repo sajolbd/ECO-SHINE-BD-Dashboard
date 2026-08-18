@@ -110,31 +110,24 @@ export default function MediaLibraryPage() {
     }
   };
 
-  const handleDelete = (id: string) => {
-    showConfirm({
+  const handleDelete = async (id: string) => {
+    const confirmed = await showConfirm({
       title: "ছবি ডিলিট করুন",
       message: "আপনি কি নিশ্চিতভাবে এই ছবিটি ডিলিট করতে চান? এটি প্রোডাক্টের ছবি থাকলে তা আর দেখা যাবে না।",
-      type: "confirm",
-      onConfirm: async () => {
-        try {
-          const res = await fetchAPI(`/api/media/${id}`, { method: "DELETE" });
-          if (res.success) {
-            showAlert({
-              title: "সফল হয়েছে",
-              message: "ছবি সফলভাবে ডিলিট করা হয়েছে।",
-              type: "success",
-            });
-            loadMedia();
-          }
-        } catch (err: any) {
-          showAlert({
-            title: "ত্রুটি",
-            message: err.message || "ডিলিট ব্যর্থ হয়েছে।",
-            type: "error",
-          });
-        }
-      },
+      type: "danger",
+      confirmText: "হ্যাঁ, ডিলিট করুন",
+      cancelText: "বাতিল",
     });
+    if (!confirmed) return;
+    try {
+      const res = await fetchAPI(`/api/media/${id}`, { method: "DELETE" });
+      if (res.success) {
+        showAlert({ title: "সফল হয়েছে", message: "ছবি সফলভাবে ডিলিট করা হয়েছে।", type: "success" });
+        loadMedia();
+      }
+    } catch (err: any) {
+      showAlert({ title: "ত্রুটি", message: err.message || "ডিলিট ব্যর্থ হয়েছে।", type: "error" });
+    }
   };
 
   const handleCopyUrl = (url: string, id: string) => {

@@ -2,11 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import { fetchAPI } from "../../../lib/api";
+import { useModal } from "../../../context/ModalContext";
 import { Save, Globe, Eye, Search, Code, Check } from "lucide-react";
 
 type Pages = "home" | "products" | "categories" | "about" | "contact";
 
 export default function SEOCMSPage() {
+  const { showAlert } = useModal();
   const [activePage, setActivePage] = useState<Pages>("home");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -69,11 +71,11 @@ export default function SEOCMSPage() {
       });
 
       if (res.success) {
-        alert(`${activePage.toUpperCase()} পেজের SEO মেটা সফলভাবে সেভ করা হয়েছে।`);
+        showAlert({ title: "সফল হয়েছে", message: `${activePage.toUpperCase()} পেজের SEO মেটা সফলভাবে সেভ করা হয়েছে।`, type: "success" });
         loadData(activePage);
       }
     } catch (err: any) {
-      alert(err.message || "সংরক্ষণ ব্যর্থ হয়েছে।");
+      showAlert({ title: "ত্রুটি", message: err.message || "সংরক্ষণ ব্যর্থ হয়েছে।", type: "error" });
     } finally {
       setSaving(false);
     }

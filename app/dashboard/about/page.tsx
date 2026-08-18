@@ -2,9 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import { fetchAPI } from "../../../lib/api";
+import { useModal } from "../../../context/ModalContext";
 import { Save, PlusCircle, MinusCircle } from "lucide-react";
 
 export default function AboutCMSPage() {
+  const { showAlert } = useModal();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -69,11 +71,11 @@ export default function AboutCMSPage() {
       });
 
       if (res.success) {
-        alert("আমাদের সম্পর্কে পেজ সেটিংস সফলভাবে সেভ করা হয়েছে।");
+        showAlert({ title: "সফল হয়েছে", message: "আমাদের সম্পর্কে পেজ সেটিংস সফলভাবে সেভ করা হয়েছে।", type: "success" });
         loadData();
       }
     } catch (err: any) {
-      alert(err.message || "সংরক্ষণ ব্যর্থ হয়েছে।");
+      showAlert({ title: "ত্রুটি", message: err.message || "সংরক্ষণ ব্যর্থ হয়েছে।", type: "error" });
     } finally {
       setSaving(false);
     }

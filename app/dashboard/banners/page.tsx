@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { fetchAPI } from "../../../lib/api";
+import { useModal } from "../../../context/ModalContext";
 import {
   Plus,
   Edit2,
@@ -27,6 +28,7 @@ interface Banner {
 }
 
 export default function BannersPage() {
+  const { showAlert, showConfirm } = useModal();
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -103,15 +105,22 @@ export default function BannersPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("আপনি কি নিশ্চিতভাবে এই ব্যানারটি ডিলিট করতে চান?")) return;
+    const confirmed = await showConfirm({
+      title: "ব্যানার ডিলিট",
+      message: "আপনি কি নিশ্চিতভাবে এই ব্যানারটি ডিলিট করতে চান?",
+      confirmText: "হ্যাঁ, ডিলিট করুন",
+      cancelText: "বাতিল",
+      type: "danger",
+    });
+    if (!confirmed) return;
     try {
       const res = await fetchAPI(`/api/banners/${id}`, { method: "DELETE" });
       if (res.success) {
-        alert("ব্যানার সফলভাবে ডিলিট করা হয়েছে।");
+        showAlert({ title: "সফল হয়েছে", message: "ব্যানার সফলভাবে ডিলিট করা হয়েছে।", type: "success" });
         loadBanners();
       }
     } catch (err: any) {
-      alert(err.message || "ডিলিট ব্যর্থ হয়েছে।");
+      showAlert({ title: "ত্রুটি", message: err.message || "ডিলিট ব্যর্থ হয়েছে।", type: "error" });
     }
   };
 
@@ -162,13 +171,13 @@ export default function BannersPage() {
         } else {
           setImageMobile(data.media.url);
         }
-        alert("ছবি সফলভাবে আপলোড করা হয়েছে।");
+        showAlert({ title: "সফল হয়েছে", message: "ছবি সফলভাবে আপলোড করা হয়েছে।", type: "success" });
       } else {
-        alert(data.message || "আপলোড ব্যর্থ হয়েছে।");
+        showAlert({ title: "ত্রুটি", message: data.message || "আপলোড ব্যর্থ হয়েছে।", type: "error" });
       }
     } catch (err: any) {
       console.error("Upload error:", err);
-      alert(err.message || "আপলোড ব্যর্থ হয়েছে।");
+      showAlert({ title: "ত্রুটি", message: err.message || "আপলোড ব্যর্থ হয়েছে।", type: "error" });
     } finally {
       setUploadingImage(false);
     }
@@ -177,7 +186,7 @@ export default function BannersPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!imageDesktop.trim() || !imageMobile.trim()) {
-      alert("ডেস্কটপ এবং মোবাইল ব্যানার ইমেজ আবশ্যক।");
+      showAlert({ title: "তথ্য প্রয়োজন", message: "ডেস্কটপ এবং মোবাইল ব্যানার ইমেজ আবশ্যক।", type: "warning" });
       return;
     }
 
@@ -211,12 +220,12 @@ export default function BannersPage() {
       }
 
       if (res.success) {
-        alert(editingBanner ? "ব্যানার সফলভাবে আপডেট হয়েছে।" : "নতুন ব্যানার সফলভাবে যুক্ত হয়েছে।");
+        showAlert({ title: "সফল হয়েছে", message: editingBanner ? "ব্যানার সফলভাবে আপডেট হয়েছে।" : "নতুন ব্যানার সফলভাবে যুক্ত হয়েছে।", type: "success" });
         setShowModal(false);
         loadBanners();
       }
     } catch (err: any) {
-      alert(err.message || "সংরক্ষণ ব্যর্থ হয়েছে।");
+      showAlert({ title: "ত্রুটি", message: err.message || "সংরক্ষণ ব্যর্থ হয়েছে।", type: "error" });
     } finally {
       setSubmitting(false);
     }

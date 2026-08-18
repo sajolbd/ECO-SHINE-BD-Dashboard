@@ -217,23 +217,24 @@ export default function ProductsPage() {
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
-    showConfirm({
+  const handleDelete = async (id: string) => {
+    const confirmed = await showConfirm({
       title: "প্রোডাক্ট ডিলিট করুন",
       message: "আপনি কি নিশ্চিতভাবে এই প্রোডাক্টটি ডিলিট করতে চান?",
-      type: "confirm",
-      onConfirm: async () => {
-        try {
-          const res = await fetchAPI(`/api/products/${id}`, { method: "DELETE" });
-          if (res.success) {
-            showAlert({ title: "সফল হয়েছে", message: "প্রোডাক্ট সফলভাবে ডিলিট করা হয়েছে।", type: "success" });
-            loadProducts();
-          }
-        } catch (err: any) {
-          showAlert({ title: "ত্রুটি", message: err.message || "ডিলিট ব্যর্থ হয়েছে।", type: "error" });
-        }
-      },
+      type: "danger",
+      confirmText: "হ্যাঁ, ডিলিট করুন",
+      cancelText: "বাতিল",
     });
+    if (!confirmed) return;
+    try {
+      const res = await fetchAPI(`/api/products/${id}`, { method: "DELETE" });
+      if (res.success) {
+        showAlert({ title: "সফল হয়েছে", message: "প্রোডাক্ট সফলভাবে ডিলিট করা হয়েছে।", type: "success" });
+        loadProducts();
+      }
+    } catch (err: any) {
+      showAlert({ title: "ত্রুটি", message: err.message || "ডিলিট ব্যর্থ হয়েছে।", type: "error" });
+    }
   };
 
   const handleDirectUpload = async (files: FileList | null, target: "main" | "gallery") => {

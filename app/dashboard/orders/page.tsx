@@ -3,6 +3,7 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { fetchAPI } from "../../../lib/api";
+import { useModal } from "../../../context/ModalContext";
 import {
   Search,
   CheckCircle,
@@ -82,6 +83,7 @@ interface Order {
 function OrdersContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { showAlert } = useModal();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,12 +162,12 @@ function OrdersContent() {
       });
 
       if (res.success) {
-        alert(`অর্ডার স্ট্যাটাস সফলভাবে '${newStatus}' আপডেট করা হয়েছে।`);
+        showAlert({ title: "সফল হয়েছে", message: `অর্ডার স্ট্যাটাস সফলভাবে '${newStatus}' আপডেট করা হয়েছে।`, type: "success" });
         setSelectedOrder(res.order);
         loadOrders();
       }
     } catch (err: any) {
-      alert(err.message || "স্ট্যাটাস আপডেট ব্যর্থ হয়েছে।");
+      showAlert({ title: "ত্রুটি", message: err.message || "স্ট্যাটাস আপডেট ব্যর্থ হয়েছে।", type: "error" });
     } finally {
       setStatusUpdating(false);
     }
@@ -176,7 +178,7 @@ function OrdersContent() {
     if (!selectedOrder) return;
 
     if (newCallResult === "callback_requested" && !newFollowUpDate) {
-      alert("ফলো-আপ কলের তারিখ ও সময় নির্বাচন করুন।");
+      showAlert({ title: "তথ্য প্রয়োজন", message: "ফলো-আপ কলের তারিখ তথ্য নির্বাচন করুন।", type: "warning" });
       return;
     }
 
@@ -193,14 +195,14 @@ function OrdersContent() {
       });
 
       if (res.success) {
-        alert("কল ট্র্যাক রিকল সফলভাবে সেভ করা হয়েছে!");
+        showAlert({ title: "সফল হয়েছে", message: "কল ট্র্যাক রিকল সফলভাবে সেভ করা হয়েছে!", type: "success" });
         setSelectedOrder(res.order);
         setNewCallNotes("");
         setNewFollowUpDate("");
         loadOrders();
       }
     } catch (err: any) {
-      alert(err.message || "কল রেকর্ড সংরক্ষণ করা সম্ভব হয়নি।");
+      showAlert({ title: "ত্রুটি", message: err.message || "কল রেকর্ড সংরক্ষণ করা সম্ভব হয়নি।", type: "error" });
     } finally {
       setSubmittingCall(false);
     }

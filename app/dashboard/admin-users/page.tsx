@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchAPI } from "../../../lib/api";
 import { useAuth } from "../../../context/AuthContext";
+import { useModal } from "../../../context/ModalContext";
 import {
   Plus,
   Edit2,
@@ -23,6 +24,7 @@ interface AdminUser {
 
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth();
+  const { showAlert, showConfirm } = useModal();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -77,32 +79,39 @@ export default function AdminUsersPage() {
 
   const handleDelete = async (id: string) => {
     if (currentUser?.id === id) {
-      alert("আপনি নিজের অ্যাকাউন্ট ডিলিট করতে পারবেন না।");
+      showAlert({ title: "সতর্কতা", message: "আপনি নিজের অ্যাকাউন্ট ডিলিট করতে পারবেন না।", type: "warning" });
       return;
     }
 
-    if (!confirm("আপনি কি নিশ্চিতভাবে এই অ্যাডমিন ইউজারটি ডিলিট করতে চান?")) return;
+    const confirmed = await showConfirm({
+      title: "ইউজার ডিলিট",
+      message: "আপনি কি নিশ্চিতভাবে এই অ্যাডমিন ইউজারটি ডিলিট করতে চান?",
+      confirmText: "হ্যাঁ, ডিলিট করুন",
+      cancelText: "বাতিল",
+      type: "danger",
+    });
+    if (!confirmed) return;
 
     try {
       const res = await fetchAPI(`/api/admin-users/${id}`, { method: "DELETE" });
       if (res.success) {
-        alert("অ্যাডমিন ইউজার সফলভাবে ডিলিট করা হয়েছে।");
+        showAlert({ title: "সফল হয়েছে", message: "অ্যাডমিন ইউজার সফলভাবে ডিলিট করা হয়েছে।", type: "success" });
         loadUsers();
       }
     } catch (err: any) {
-      alert(err.message || "ডিলিট ব্যর্থ হয়েছে।");
+      showAlert({ title: "ত্রুটি", message: err.message || "ডিলিট ব্যর্থ হয়েছে।", type: "error" });
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) {
-      alert("নাম এবং ইমেইল প্রদান করা আবশ্যক।");
+      showAlert({ title: "তথ্য প্রয়োজন", message: "নাম এবং ইমেইল প্রদান করা আবশ্যক।", type: "warning" });
       return;
     }
 
     if (!editingUser && !password) {
-      alert("নতুন ইউজারের জন্য পাসওয়ার্ড প্রদান করা আবশ্যক।");
+      showAlert({ title: "তথ্য প্রয়োজন", message: "নতুন ইউজারের জন্য পাসওয়ার্ড প্রদান করা আবশ্যক।", type: "warning" });
       return;
     }
 
@@ -133,12 +142,12 @@ export default function AdminUsersPage() {
       }
 
       if (res.success) {
-        alert(editingUser ? "অ্যাডমিন অ্যাকাউন্ট সফলভাবে আপডেট হয়েছে।" : "নতুন অ্যাডমিন সফলভাবে যুক্ত হয়েছে।");
+        showAlert({ title: "সফল হয়েছে", message: editingUser ? "অ্যাডমিন অ্যাকাউন্ট সফলভাবে আপডেট হয়েছে।" : "নতুন অ্যাডমিন সফলভাবে যুক্ত হয়েছে।", type: "success" });
         setShowModal(false);
         loadUsers();
       }
     } catch (err: any) {
-      alert(err.message || "সংরক্ষণ ব্যর্থ হয়েছে।");
+      showAlert({ title: "ত্রুটি", message: err.message || "সংরক্ষণ ব্যর্থ হয়েছে।", type: "error" });
     } finally {
       setSubmitting(false);
     }

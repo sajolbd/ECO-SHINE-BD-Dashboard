@@ -195,23 +195,24 @@ export default function HousewareProductsPage() {
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
-    showConfirm({
-      title: "Houseware প্রোডাক্ট ডিলিট করুন",
-      message: "আপনি কি নিশ্চিতভাবে এই Houseware প্রোডাক্টটি ডিলিট করতে চান?",
-      type: "confirm",
-      onConfirm: async () => {
-        try {
-          const res = await fetchAPI(`/api/products/${id}`, { method: "DELETE" });
-          if (res.success) {
-            showAlert({ title: "সফল হয়েছে", message: "প্রোডাক্ট সফলভাবে ডিলিট করা হয়েছে।", type: "success" });
-            loadProducts();
-          }
-        } catch (err: any) {
-          showAlert({ title: "ত্রুটি", message: err.message || "ডিলিট ব্যর্থ হয়েছে।", type: "error" });
-        }
-      },
+  const handleDelete = async (id: string) => {
+    const confirmed = await showConfirm({
+      title: "Houseware \u09aa\u09cd\u09b0\u09cb\u09a1\u09be\u0995\u09cd\u099f \u09a1\u09bf\u09b2\u09bf\u099f \u0995\u09b0\u09c1\u09a8",
+      message: "\u0986\u09aa\u09a8\u09bf \u0995\u09bf \u09a8\u09bf\u09b6\u09cd\u099a\u09bf\u09a4\u09ad\u09be\u09ac\u09c7 \u098f\u0987 Houseware \u09aa\u09cd\u09b0\u09cb\u09a1\u09be\u0995\u09cd\u099f\u099f\u09bf \u09a1\u09bf\u09b2\u09bf\u099f \u0995\u09b0\u09a4\u09c7 \u099a\u09be\u09a8?",
+      type: "danger",
+      confirmText: "\u09b9\u09cd\u09af\u09be\u0981, \u09a1\u09bf\u09b2\u09bf\u099f \u0995\u09b0\u09c1\u09a8",
+      cancelText: "\u09ac\u09be\u09a4\u09bf\u09b2",
     });
+    if (!confirmed) return;
+    try {
+      const res = await fetchAPI(`/api/products/${id}`, { method: "DELETE" });
+      if (res.success) {
+        showAlert({ title: "\u09b8\u09ab\u09b2 \u09b9\u09af\u09bc\u09c7\u099b\u09c7", message: "\u09aa\u09cd\u09b0\u09cb\u09a1\u09be\u0995\u09cd\u099f \u09b8\u09ab\u09b2\u09ad\u09be\u09ac\u09c7 \u09a1\u09bf\u09b2\u09bf\u099f \u0995\u09b0\u09be \u09b9\u09af\u09bc\u09c7\u099b\u09c7\u0964", type: "success" });
+        loadProducts();
+      }
+    } catch (err: any) {
+      showAlert({ title: "\u09a4\u09cd\u09b0\u09c1\u099f\u09bf", message: err.message || "\u09a1\u09bf\u09b2\u09bf\u099f \u09ac\u09cd\u09af\u09b0\u09cd\u09a5 \u09b9\u09af\u09bc\u09c7\u099b\u09c7\u0964", type: "error" });
+    }
   };
 
   const handleDirectUpload = async (files: FileList | null, target: "main" | "gallery") => {

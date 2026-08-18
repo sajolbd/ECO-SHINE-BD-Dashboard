@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { fetchAPI } from "../../../lib/api";
+import { useModal } from "../../../context/ModalContext";
 import {
   Save,
   ImageIcon,
@@ -33,6 +34,7 @@ interface WhyChooseUsItem {
 }
 
 export default function HomepageCMSPage() {
+  const { showAlert } = useModal();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -145,11 +147,11 @@ export default function HomepageCMSPage() {
       });
 
       if (res.success) {
-        alert("হোমপেজ সেটিংস সফলভাবে সেভ করা হয়েছে।");
+        showAlert({ title: "সফল হয়েছে", message: "হোমপেজ সেটিংস সফলভাবে সেভ করা হয়েছে।", type: "success" });
         loadData();
       }
     } catch (err: any) {
-      alert(err.message || "সংরক্ষণ ব্যর্থ হয়েছে।");
+      showAlert({ title: "ত্রুটি", message: err.message || "সংরক্ষণ ব্যর্থ হয়েছে।", type: "error" });
     } finally {
       setSaving(false);
     }

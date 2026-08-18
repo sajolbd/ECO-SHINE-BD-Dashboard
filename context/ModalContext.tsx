@@ -1,64 +1,108 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
-import { CheckCircle2, AlertTriangle, XCircle, Info, X } from "lucide-react";
+import React, { createContext, useContext, useState, useRef, ReactNode } from "react";
+import { CheckCircle2, AlertTriangle, XCircle, Info, X, Trash2 } from "lucide-react";
 
-type ModalType = "success" | "error" | "warning" | "info" | "confirm";
+type ModalType = "success" | "error" | "warning" | "info" | "danger";
 
-interface ModalOptions {
+interface AlertOptions {
   title: string;
   message: string;
   type: ModalType;
-  onConfirm?: () => void;
-  onCancel?: () => void;
+}
+
+interface ConfirmOptions {
+  title: string;
+  message: string;
+  type?: ModalType;
   confirmText?: string;
   cancelText?: string;
 }
 
 interface ModalContextType {
-  showAlert: (options: Omit<ModalOptions, "onConfirm" | "onCancel">) => void;
-  showConfirm: (options: ModalOptions) => void;
+  showAlert: (options: AlertOptions) => void;
+  showConfirm: (options: ConfirmOptions) => Promise<boolean>;
   closeModal: () => void;
 }
 
 const ModalContext = createContext<ModalContextType | undefined>(undefined);
 
-export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [options, setOptions] = useState<ModalOptions | null>(null);
+interface ModalState {
+  isOpen: boolean;
+  isConfirm: boolean;
+  title: string;
+  message: string;
+  type: ModalType;
+  confirmText: string;
+  cancelText: string;
+}
 
-  const showAlert = (opts: Omit<ModalOptions, "onConfirm" | "onCancel">) => {
-    setOptions({ ...opts, type: opts.type || "info" });
-    setIsOpen(true);
+export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [modal, setModal] = useState<ModalState>({
+    isOpen: false,
+    isConfirm: false,
+    title: "",
+    message: "",
+    type: "info",
+    confirmText: "নিশ্চিত করুন",
+    cancelText: "বাতিল",
+  });
+
+  // Hold promise resolver for confirm
+  const resolverRef = useRef<((val: boolean) => void) | null>(null);
+
+  const showAlert = (opts: AlertOptions) => {
+    setModal({
+      isOpen: true,
+      isConfirm: false,
+      title: opts.title,
+      message: opts.message,
+      type: opts.type,
+      confirmText: "ঠিক আছে",
+      cancelText: "বাতিল",
+    });
   };
 
-  const showConfirm = (opts: ModalOptions) => {
-    setOptions(opts);
-    setIsOpen(true);
+  const showConfirm = (opts: ConfirmOptions): Promise<boolean> => {
+    return new Promise((resolve) => {
+      resolverRef.current = resolve;
+      setModal({
+        isOpen: true,
+        isConfirm: true,
+        title: opts.title,
+        message: opts.message,
+        type: opts.type || "warning",
+        confirmText: opts.confirmText || "নিশ্চিত করুন",
+        cancelText: opts.cancelText || "বাতিল",
+      });
+    });
   };
 
   const closeModal = () => {
-    setIsOpen(false);
-    if (options?.onCancel) {
-      options.onCancel();
+    setModal((prev) => ({ ...prev, isOpen: false }));
+    if (resolverRef.current) {
+      resolverRef.current(false);
+      resolverRef.current = null;
     }
   };
 
   const handleConfirm = () => {
-    setIsOpen(false);
-    if (options?.onConfirm) {
-      options.onConfirm();
+    setModal((prev) => ({ ...prev, isOpen: false }));
+    if (resolverRef.current) {
+      resolverRef.current(true);
+      resolverRef.current = null;
     }
   };
 
   const getIcon = (type: ModalType) => {
     switch (type) {
       case "success":
-        return <CheckCircle2 className="w-12 h-12 text-emerald-500 animate-bounce" />;
+        return <CheckCircle2 className="w-12 h-12 text-emerald-500" />;
       case "error":
-        return <XCircle className="w-12 h-12 text-rose-500 animate-pulse" />;
+        return <XCircle className="w-12 h-12 text-rose-500" />;
+      case "danger":
+        return <Trash2 className="w-12 h-12 text-red-500" />;
       case "warning":
-      case "confirm":
         return <AlertTriangle className="w-12 h-12 text-amber-500" />;
       case "info":
       default:
@@ -66,76 +110,118 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
-  const getHeaderColor = (type: ModalType) => {
+  const getColors = (type: ModalType) => {
     switch (type) {
       case "success":
-        return "bg-emerald-50 border-emerald-100";
+        return {
+          header: "bg-emerald-50 border-emerald-100",
+          btn: "bg-emerald-600 hover:bg-emerald-700",
+          title: "text-emerald-700",
+        };
       case "error":
-        return "bg-rose-50 border-rose-100";
+        return {
+          header: "bg-rose-50 border-rose-100",
+          btn: "bg-rose-600 hover:bg-rose-700",
+          title: "text-rose-700",
+        };
+      case "danger":
+        return {
+          header: "bg-red-50 border-red-100",
+          btn: "bg-red-600 hover:bg-red-700",
+          title: "text-red-700",
+        };
       case "warning":
-      case "confirm":
-        return "bg-amber-50 border-amber-100";
+        return {
+          header: "bg-amber-50 border-amber-100",
+          btn: "bg-amber-600 hover:bg-amber-700",
+          title: "text-amber-700",
+        };
       default:
-        return "bg-sky-50 border-sky-100";
+        return {
+          header: "bg-sky-50 border-sky-100",
+          btn: "bg-sky-600 hover:bg-sky-700",
+          title: "text-sky-700",
+        };
     }
   };
+
+  const colors = getColors(modal.type);
 
   return (
     <ModalContext.Provider value={{ showAlert, showConfirm, closeModal }}>
       {children}
-      {isOpen && options && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-md bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl transition-all scale-100 duration-300">
-            
-            {/* Header Colored Strip */}
-            <div className={`p-6 border-b flex flex-col items-center gap-4 text-center ${getHeaderColor(options.type)}`}>
+
+      {/* Beautiful Custom Modal */}
+      {modal.isOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/55 backdrop-blur-sm">
+          {/* Backdrop click closes modal */}
+          <div className="absolute inset-0" onClick={closeModal} />
+
+          <div
+            className="relative w-full max-w-sm bg-white rounded-3xl overflow-hidden shadow-2xl z-10"
+            style={{ animation: "modalPop 0.2s cubic-bezier(0.34,1.56,0.64,1)" }}
+          >
+            {/* Colored Header */}
+            <div className={`p-7 border-b flex flex-col items-center gap-3 text-center ${colors.header}`}>
+              {/* Close X */}
               <button
                 onClick={closeModal}
-                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-black/5 text-slate-400 hover:text-slate-600 transition-all cursor-pointer"
+                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-black/8 text-slate-400 hover:text-slate-600 transition-all cursor-pointer"
               >
-                <X className="w-4.5 h-4.5" />
+                <X className="w-4 h-4" />
               </button>
-              {getIcon(options.type)}
-              <h3 className="text-lg font-black text-slate-800 tracking-tight leading-none">
-                {options.title}
+
+              {/* Animated icon */}
+              <div className="p-3 rounded-full bg-white/70 shadow-sm">
+                {getIcon(modal.type)}
+              </div>
+
+              <h3 className={`text-lg font-black tracking-tight leading-tight ${colors.title}`}>
+                {modal.title}
               </h3>
             </div>
 
-            {/* Modal Body Message */}
-            <div className="p-6 text-center">
+            {/* Message Body */}
+            <div className="px-7 py-5 text-center">
               <p className="text-sm font-semibold text-slate-500 leading-relaxed whitespace-pre-line">
-                {options.message}
+                {modal.message}
               </p>
             </div>
 
-            {/* Modal Action Footer */}
-            <div className="p-6 border-t border-slate-100 flex items-center justify-center gap-3 bg-slate-50">
-              {options.type === "confirm" ? (
+            {/* Action Buttons */}
+            <div className="px-7 pb-7 flex items-center gap-3">
+              {modal.isConfirm ? (
                 <>
                   <button
                     onClick={closeModal}
-                    className="flex-1 py-3 px-4 bg-white hover:bg-slate-100 active:scale-98 text-slate-700 font-extrabold rounded-xl border border-slate-200 transition-all text-xs cursor-pointer"
+                    className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl border border-slate-200 transition-all text-sm cursor-pointer"
                   >
-                    {options.cancelText || "বাতিল"}
+                    {modal.cancelText}
                   </button>
                   <button
                     onClick={handleConfirm}
-                    className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold rounded-xl transition-all shadow-sm text-xs cursor-pointer"
+                    className={`flex-1 py-3 px-4 ${colors.btn} text-white font-extrabold rounded-xl transition-all shadow-sm text-sm cursor-pointer`}
                   >
-                    {options.confirmText || "নিশ্চিত করুন"}
+                    {modal.confirmText}
                   </button>
                 </>
               ) : (
                 <button
                   onClick={handleConfirm}
-                  className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold rounded-xl transition-all shadow-sm text-xs cursor-pointer text-center"
+                  className={`w-full py-3 px-4 ${colors.btn} text-white font-extrabold rounded-xl transition-all shadow-sm text-sm cursor-pointer`}
                 >
-                  ঠিক আছে
+                  {modal.confirmText}
                 </button>
               )}
             </div>
-
           </div>
+
+          <style>{`
+            @keyframes modalPop {
+              0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+              100% { opacity: 1; transform: scale(1) translateY(0); }
+            }
+          `}</style>
         </div>
       )}
     </ModalContext.Provider>

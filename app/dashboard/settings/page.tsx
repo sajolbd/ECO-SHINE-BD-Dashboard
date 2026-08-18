@@ -3,10 +3,12 @@
 import React, { useEffect, useState } from "react";
 import { fetchAPI } from "../../../lib/api";
 import { useAuth } from "../../../context/AuthContext";
+import { useModal } from "../../../context/ModalContext";
 import { Save, AlertTriangle, Settings, HelpCircle } from "lucide-react";
 
 export default function SettingsCMSPage() {
   const { user } = useAuth();
+  const { showAlert } = useModal();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -73,11 +75,11 @@ export default function SettingsCMSPage() {
       });
 
       if (res.success) {
-        alert("গ্লোবাল সাইট সেটিংস সফলভাবে সংরক্ষণ করা হয়েছে।");
+        showAlert({ title: "সফল হয়েছে", message: "গ্লোবাল সাইট সেটিংস সফলভাবে সংরক্ষণ করা হয়েছে।", type: "success" });
         loadData();
       }
     } catch (err: any) {
-      alert(err.message || "সংরক্ষণ ব্যর্থ হয়েছে।");
+      showAlert({ title: "ত্রুটি", message: err.message || "সংরক্ষণ ব্যর্থ হয়েছে।", type: "error" });
     } finally {
       setSaving(false);
     }
