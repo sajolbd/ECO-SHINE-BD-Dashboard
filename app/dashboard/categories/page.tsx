@@ -357,7 +357,7 @@ export default function CategoriesPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="যেমন: অটো কেয়ার, হোম কেয়ার"
+                  placeholder="যেমন: Cleaning products, Houseware"
                   required
                   className="w-full px-4 py-2.5 border border-slate-200 focus:border-emerald-500 rounded-xl text-sm font-semibold focus:outline-none"
                 />
@@ -370,7 +370,7 @@ export default function CategoriesPage() {
                   type="text"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
-                  placeholder="যেমন: autocare, homecare"
+                  placeholder="যেমন: cleaning-products, houseware"
                   required
                   disabled={!!editingCategory} // lock slugs on edit to prevent broken links
                   className="w-full px-4 py-2.5 border border-slate-200 focus:border-emerald-500 rounded-xl text-sm font-semibold focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"

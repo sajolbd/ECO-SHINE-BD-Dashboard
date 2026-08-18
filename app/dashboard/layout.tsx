@@ -14,20 +14,21 @@ export default function DashboardLayout({
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Brief loading overlay — AuthContext resolves in <6s max
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-full border-4 border-emerald-200 border-t-emerald-600 animate-spin" />
-          <p className="text-slate-500 font-extrabold text-sm tracking-wide">
-            লোডিং তথ্য...
+          <div className="w-10 h-10 rounded-full border-4 border-emerald-200 border-t-emerald-600 animate-spin" />
+          <p className="text-slate-400 font-semibold text-xs tracking-wide">
+            অপেক্ষা করুন...
           </p>
         </div>
       </div>
     );
   }
 
-  // Redirect handles unauthenticated users in AuthContext, so we just render null here safely
+  // Not authenticated — AuthContext will redirect to /login
   if (!user) return null;
 
   return (

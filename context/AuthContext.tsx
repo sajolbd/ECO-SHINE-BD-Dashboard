@@ -1,8 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { fetchAPI } from "../lib/api";
 
 interface User {
   id: string;
@@ -21,78 +20,103 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const initialized = useRef(false);
 
-  // Authenticate user on boot
+  // Run ONCE on mount — check stored token
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     const initAuth = async () => {
-      const storedToken = localStorage.getItem("token");
-      if (storedToken) {
-        try {
-          const res = await fetchAPI("/api/auth/me", { token: storedToken });
-          if (res.success && res.user) {
-            setUser(res.user);
+      const storedToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      if (!storedToken) {
+        // No token — done immediately, no spinner
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s max
+
+        const res = await fetch(`${API_URL}/api/auth/me`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${storedToken}`,
+          },
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.user) {
+            setUser(data.user);
             setToken(storedToken);
           } else {
-            // Token invalid or expired
-            logout();
+            localStorage.removeItem("token");
           }
-        } catch (error) {
-          logout();
+        } else {
+          localStorage.removeItem("token");
         }
+      } catch {
+        // Abort / network error — clear bad token
+        localStorage.removeItem("token");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initAuth();
   }, []);
 
-  // Protect pages
+  // Redirect guard — runs after loading is done
   useEffect(() => {
-    if (!loading) {
-      const isLoginPage = pathname === "/login";
-      if (!user && !isLoginPage) {
-        router.push("/login");
-      } else if (user && isLoginPage) {
-        router.push("/dashboard");
-      }
+    if (loading) return;
+
+    const isPublicPage = pathname === "/login";
+
+    if (!user && !isPublicPage) {
+      router.replace("/login");
+    } else if (user && isPublicPage) {
+      router.replace("/dashboard");
     }
-  }, [user, loading, pathname, router]);
+  }, [user, loading, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = async (email: string, password: string) => {
-    try {
-      const res = await fetchAPI("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-      if (res.success && res.token) {
-        localStorage.setItem("token", res.token);
-        setToken(res.token);
-        setUser(res.user);
-        router.push("/dashboard");
-      } else {
-        throw new Error(res.message || "Invalid email or password.");
-      }
-    } catch (error: any) {
-      throw new Error(error.message || "Invalid credentials.");
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || "Invalid email or password.");
     }
+
+    localStorage.setItem("token", data.token);
+    setToken(data.token);
+    setUser(data.user);
+    router.replace("/dashboard");
   };
 
   const logout = () => {
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
-    if (typeof window !== "undefined") {
-      // Call logout API
-      fetchAPI("/api/auth/logout", { method: "POST" }).catch(() => {});
-    }
-    router.push("/login");
+    router.replace("/login");
   };
 
   return (

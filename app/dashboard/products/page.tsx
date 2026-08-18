@@ -101,7 +101,7 @@ export default function ProductsPage() {
 
   // Form Fields
   const [title, setTitle] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState("autocare");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("cleaning-products");
   const [price, setPrice] = useState("");
   const [costPrice, setCostPrice] = useState("");
   const [originalPrice, setOriginalPrice] = useState("");
@@ -164,7 +164,7 @@ export default function ProductsPage() {
   const openAddModal = () => {
     setEditingProduct(null);
     setTitle("");
-    setSelectedCategoryId("autocare");
+    setSelectedCategoryId("cleaning-products");
     setPrice("");
     setCostPrice("");
     setOriginalPrice("");
