@@ -103,8 +103,9 @@ export default function MediaLibraryPage() {
         setPage(1);
         loadMedia();
       }
-    } catch (err: any) {
-      setUploadError(err.message || "আপলোড করতে সমস্যা হয়েছে। ফাইলের সাইজ চেক করুন।");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "আপলোড করতে সমস্যা হয়েছে। ফাইলের সাইজ চেক করুন।";
+      setUploadError(message);
     } finally {
       setUploading(false);
     }
@@ -125,8 +126,9 @@ export default function MediaLibraryPage() {
         showAlert({ title: "সফল হয়েছে", message: "ছবি সফলভাবে ডিলিট করা হয়েছে।", type: "success" });
         loadMedia();
       }
-    } catch (err: any) {
-      showAlert({ title: "ত্রুটি", message: err.message || "ডিলিট ব্যর্থ হয়েছে।", type: "error" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "ডিলিট ব্যর্থ হয়েছে।";
+      showAlert({ title: "ত্রুটি", message, type: "error" });
     }
   };
 
