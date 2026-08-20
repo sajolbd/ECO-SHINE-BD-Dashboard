@@ -21,6 +21,8 @@ import {
   ExternalLink,
   ShoppingBag,
   Check,
+  Globe,
+  RefreshCw,
 } from "lucide-react";
 
 interface ProductFeatureStep {
@@ -88,6 +90,7 @@ export default function HousewareProductsPage() {
   // Share Link Modal State
   const [shareProduct, setShareProduct] = useState<Product | null>(null);
   const [copiedType, setCopiedType] = useState<"standard" | "order" | null>(null);
+  const [domainType, setDomainType] = useState<"vercel" | "custom">("vercel");
 
   const [uploadingMain, setUploadingMain] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
@@ -845,6 +848,32 @@ export default function HousewareProductsPage() {
 
             {/* Modal Content */}
             <div className="p-6 space-y-5">
+              {/* Domain Switcher */}
+              <div className="space-y-1">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">ডোমেইন নির্বাচন করুন (Select Domain):</label>
+                <div className="flex items-center gap-1.5 bg-orange-50 p-1 rounded-2xl border border-orange-200">
+                  <button
+                    type="button"
+                    onClick={() => setDomainType("vercel")}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      domainType === "vercel" ? "bg-orange-500 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <span>⚡ Vercel Domain</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDomainType("custom")}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      domainType === "custom" ? "bg-orange-500 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>🌐 ecoshinebd.com</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Product Info Card */}
               <div className="p-3.5 bg-orange-50/50 border border-orange-100 rounded-2xl flex items-center gap-3">
                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-orange-200 shrink-0">
@@ -862,81 +891,97 @@ export default function HousewareProductsPage() {
               </div>
 
               {/* Link Option 1: Standard Product Landing Page */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-black text-slate-700 flex items-center justify-between">
-                  <span>১. হাউসওয়্যার প্রোডাক্ট পেজ লিংক (Standard Page)</span>
-                  <span className="text-[10px] text-slate-400 font-medium">ভিজিটর পেজে গিয়ে অর্ডার বাটন চাপবে</span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={`https://ecoshinebd.com/houseware/products/${shareProduct.id}`}
-                    className="flex-1 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono text-slate-700 select-all focus:outline-none"
-                  />
-                  <button
-                    onClick={() => {
-                      const url = `https://ecoshinebd.com/houseware/products/${shareProduct.id}`;
-                      navigator.clipboard.writeText(url);
-                      setCopiedType("standard");
-                      setTimeout(() => setCopiedType(null), 2500);
-                    }}
-                    className="px-3.5 py-2 bg-slate-800 hover:bg-black text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shrink-0"
-                  >
-                    {copiedType === "standard" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedType === "standard" ? "কপি হয়েছে!" : "কপি করুন"}</span>
-                  </button>
-                </div>
-              </div>
+              {(() => {
+                const siteBase = domainType === "vercel" ? "https://eco-shine-bd.vercel.app" : "https://ecoshinebd.com";
+                const standardUrl = `${siteBase}/houseware/products/${shareProduct.id}`;
+                const autoOrderUrl = `${siteBase}/houseware/products/${shareProduct.id}?order=true`;
 
-              {/* Link Option 2: Direct Order Form Auto-Open Link */}
-              <div className="space-y-1.5 pt-1">
-                <label className="block text-xs font-black text-orange-700 flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <ShoppingBag className="w-3.5 h-3.5 text-orange-600" />
-                    ২. ডিরেক্ট অটো-অর্ডার ফরম লিংক (High Converting 🔥)
-                  </span>
-                  <span className="text-[10px] text-orange-700 font-extrabold bg-orange-100 px-2 py-0.5 rounded-full border border-orange-200">সুপার ফাস্ট অর্ডার</span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={`https://ecoshinebd.com/houseware/products/${shareProduct.id}?order=true`}
-                    className="flex-1 px-3 py-2 bg-orange-50/80 border border-orange-300 rounded-xl text-xs font-mono text-orange-900 font-bold select-all focus:outline-none"
-                  />
-                  <button
-                    onClick={() => {
-                      const url = `https://ecoshinebd.com/houseware/products/${shareProduct.id}?order=true`;
-                      navigator.clipboard.writeText(url);
-                      setCopiedType("order");
-                      setTimeout(() => setCopiedType(null), 2500);
-                    }}
-                    className="px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shrink-0 shadow-sm"
-                  >
-                    {copiedType === "order" ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedType === "order" ? "কপি হয়েছে!" : "কপি করুন"}</span>
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-500 font-medium leading-tight pt-0.5">
-                  💡 কাস্টমার ফেসবুকে লিংকটি ক্লিক করলেই সাথে সাথে প্রোডাক্ট পেজে অর্ডার ফর্ম পপআপ ওপেন হবে।
-                </p>
-              </div>
+                return (
+                  <>
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700 flex items-center justify-between">
+                        <span>১. হাউসওয়্যার প্রোডাক্ট পেজ লিংক (Standard Page)</span>
+                        <span className="text-[10px] text-slate-400 font-medium">ভিজিটর পেজে গিয়ে অর্ডার বাটন চাপবে</span>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={standardUrl}
+                          className="flex-1 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono text-slate-700 select-all focus:outline-none"
+                        />
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(standardUrl);
+                            setCopiedType("standard");
+                            setTimeout(() => setCopiedType(null), 2500);
+                          }}
+                          className="px-3.5 py-2 bg-slate-800 hover:bg-black text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                        >
+                          {copiedType === "standard" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedType === "standard" ? "কপি হয়েছে!" : "কপি করুন"}</span>
+                        </button>
+                      </div>
+                    </div>
 
-              {/* Action Buttons: FB Direct Share */}
-              <div className="pt-3 border-t border-slate-100 flex items-center gap-3">
-                <a
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                    `https://ecoshinebd.com/houseware/products/${shareProduct.id}?order=true`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 py-2.5 bg-[#1877F2] hover:bg-blue-700 active:scale-[0.98] text-white font-extrabold rounded-xl transition-all text-xs flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  <span>ফেসবুকে সরাসরি পোস্ট শেয়ার করুন</span>
-                </a>
-              </div>
+                    {/* Link Option 2: Direct Order Form Auto-Open Link */}
+                    <div className="space-y-1.5 pt-1">
+                      <label className="block text-xs font-black text-orange-700 flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <ShoppingBag className="w-3.5 h-3.5 text-orange-600" />
+                          ২. ডিরেক্ট অটো-অর্ডার ফরম লিংক (High Converting 🔥)
+                        </span>
+                        <span className="text-[10px] text-orange-700 font-extrabold bg-orange-100 px-2 py-0.5 rounded-full border border-orange-200">সুপার ফাস্ট অর্ডার</span>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={autoOrderUrl}
+                          className="flex-1 px-3 py-2 bg-orange-50/80 border border-orange-300 rounded-xl text-xs font-mono text-orange-900 font-bold select-all focus:outline-none"
+                        />
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(autoOrderUrl);
+                            setCopiedType("order");
+                            setTimeout(() => setCopiedType(null), 2500);
+                          }}
+                          className="px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer"
+                        >
+                          {copiedType === "order" ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedType === "order" ? "কপি হয়েছে!" : "কপি করুন"}</span>
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium leading-tight pt-0.5">
+                        💡 কাস্টমার ফেসবুকে লিংকটি ক্লিক করলেই সাথে সাথে প্রোডাক্ট পেজে অর্ডার ফর্ম পপআপ ওপেন হবে।
+                      </p>
+                    </div>
+
+                    {/* Action Buttons: FB Direct Share & Debugger */}
+                    <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-stretch gap-2">
+                      <a
+                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(autoOrderUrl)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-2.5 px-4 bg-[#1877F2] hover:bg-blue-700 active:scale-[0.98] text-white font-extrabold rounded-xl transition-all text-xs flex items-center justify-center gap-2 shadow-sm"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>ফেসবুকে পোস্ট করুন</span>
+                      </a>
+                      <a
+                        href={`https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(autoOrderUrl)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all"
+                        title="Facebook Sharing Debugger — ফেসবুক লিঙ্ক প্রিভিউ রিফ্রেশ করুন"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+                        <span>FB ক্যাশ রিফ্রেশ</span>
+                      </a>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
