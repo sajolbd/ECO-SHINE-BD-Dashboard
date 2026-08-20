@@ -16,6 +16,11 @@ import {
   AlertTriangle,
   Home,
   Package,
+  Share2,
+  Copy,
+  ExternalLink,
+  ShoppingBag,
+  Check,
 } from "lucide-react";
 
 interface ProductFeatureStep {
@@ -79,6 +84,10 @@ export default function HousewareProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"general" | "images" | "details" | "seo">("general");
+
+  // Share Link Modal State
+  const [shareProduct, setShareProduct] = useState<Product | null>(null);
+  const [copiedType, setCopiedType] = useState<"standard" | "order" | null>(null);
 
   const [uploadingMain, setUploadingMain] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
@@ -459,6 +468,13 @@ export default function HousewareProductsPage() {
                       <td className="py-3 px-6 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
+                            onClick={() => setShareProduct(product)}
+                            className="p-1.5 rounded-lg border border-orange-200 text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition-all cursor-pointer"
+                            title="ফেসবুক শেয়ার ও লিংক তৈরি করুন"
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
                             onClick={() => openEditModal(product)}
                             className="p-1.5 rounded-lg border border-orange-200 text-slate-500 hover:text-orange-600 hover:bg-orange-50 hover:border-orange-300 transition-all cursor-pointer"
                             title="Edit"
@@ -800,6 +816,128 @@ export default function HousewareProductsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Facebook Share & Link Generator Modal */}
+      {shareProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-200">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-orange-500 to-amber-600 text-white p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-white/10 rounded-2xl backdrop-blur-md">
+                  <Share2 className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base">Houseware প্রোডাক্ট ফেসবুক শেয়ার লিংক</h3>
+                  <p className="text-xs text-orange-100 font-medium">ইনডিভিজুয়াল প্রোডাক্টের জন্য অটো-অর্ডার লিংক তৈরি করুন</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShareProduct(null)}
+                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-5">
+              {/* Product Info Card */}
+              <div className="p-3.5 bg-orange-50/50 border border-orange-100 rounded-2xl flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-orange-200 shrink-0">
+                  <img
+                    src={shareProduct.images[0] || "/placeholder-image.png"}
+                    alt={shareProduct.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-sm text-slate-800 line-clamp-1">{shareProduct.title}</h4>
+                  <p className="text-xs text-slate-500 font-semibold">{shareProduct.category} • {shareProduct.unit}</p>
+                  <p className="text-sm font-black text-orange-600 mt-0.5">{shareProduct.price}৳</p>
+                </div>
+              </div>
+
+              {/* Link Option 1: Standard Product Landing Page */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-slate-700 flex items-center justify-between">
+                  <span>১. হাউসওয়্যার প্রোডাক্ট পেজ লিংক (Standard Page)</span>
+                  <span className="text-[10px] text-slate-400 font-medium">ভিজিটর পেজে গিয়ে অর্ডার বাটন চাপবে</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`https://ecoshinebd.com/houseware/products/${shareProduct.id}`}
+                    className="flex-1 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono text-slate-700 select-all focus:outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      const url = `https://ecoshinebd.com/houseware/products/${shareProduct.id}`;
+                      navigator.clipboard.writeText(url);
+                      setCopiedType("standard");
+                      setTimeout(() => setCopiedType(null), 2500);
+                    }}
+                    className="px-3.5 py-2 bg-slate-800 hover:bg-black text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shrink-0"
+                  >
+                    {copiedType === "standard" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedType === "standard" ? "কপি হয়েছে!" : "কপি করুন"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Link Option 2: Direct Order Form Auto-Open Link */}
+              <div className="space-y-1.5 pt-1">
+                <label className="block text-xs font-black text-orange-700 flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <ShoppingBag className="w-3.5 h-3.5 text-orange-600" />
+                    ২. ডিরেক্ট অটো-অর্ডার ফরম লিংক (High Converting 🔥)
+                  </span>
+                  <span className="text-[10px] text-orange-700 font-extrabold bg-orange-100 px-2 py-0.5 rounded-full border border-orange-200">সুপার ফাস্ট অর্ডার</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`https://ecoshinebd.com/houseware/products/${shareProduct.id}?order=true`}
+                    className="flex-1 px-3 py-2 bg-orange-50/80 border border-orange-300 rounded-xl text-xs font-mono text-orange-900 font-bold select-all focus:outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      const url = `https://ecoshinebd.com/houseware/products/${shareProduct.id}?order=true`;
+                      navigator.clipboard.writeText(url);
+                      setCopiedType("order");
+                      setTimeout(() => setCopiedType(null), 2500);
+                    }}
+                    className="px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shrink-0 shadow-sm"
+                  >
+                    {copiedType === "order" ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedType === "order" ? "কপি হয়েছে!" : "কপি করুন"}</span>
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-tight pt-0.5">
+                  💡 কাস্টমার ফেসবুকে লিংকটি ক্লিক করলেই সাথে সাথে প্রোডাক্ট পেজে অর্ডার ফর্ম পপআপ ওপেন হবে।
+                </p>
+              </div>
+
+              {/* Action Buttons: FB Direct Share */}
+              <div className="pt-3 border-t border-slate-100 flex items-center gap-3">
+                <a
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                    `https://ecoshinebd.com/houseware/products/${shareProduct.id}?order=true`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 py-2.5 bg-[#1877F2] hover:bg-blue-700 active:scale-[0.98] text-white font-extrabold rounded-xl transition-all text-xs flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>ফেসবুকে সরাসরি পোস্ট শেয়ার করুন</span>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       )}
