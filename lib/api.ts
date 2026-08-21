@@ -25,10 +25,18 @@ export async function fetchAPI(endpoint: string, options: FetchOptions = {}) {
     headers,
   });
 
-  const data = await response.json();
+  const text = await response.text();
+  let data: any;
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    throw new Error(
+      `সার্ভার ভুল উত্তর দিয়েছে (Status ${response.status}): ${text.substring(0, 120)}`
+    );
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || "Something went wrong with the request.");
+    throw new Error(data.message || `API Error (${response.status})`);
   }
 
   return data;

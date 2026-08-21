@@ -26,6 +26,9 @@ import {
   PowerOff,
   User,
   RefreshCw,
+  Send,
+  PackageCheck,
+  Wallet,
 } from "lucide-react";
 
 export type CallResult =
@@ -77,6 +80,11 @@ interface Order {
   lastCallAt?: string;
   lastCalledBy?: string;
   nextFollowUpAt?: string;
+  courierName?: string;
+  courierConsignmentId?: string;
+  courierTrackingCode?: string;
+  courierStatus?: string;
+  courierSentAt?: string;
   createdAt: string;
 }
 
@@ -100,13 +108,19 @@ function OrdersContent() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
 
+  // Courier Actions State
+  const [courierSendingId, setCourierSendingId] = useState<string | null>(null);
+  const [courierCheckingId, setCourierCheckingId] = useState<string | null>(null);
+  const [steadfastBalance, setSteadfastBalance] = useState<number | null>(null);
+  const [checkingBalance, setCheckingBalance] = useState(false);
+
   // Call tracking form states
   const [newCallResult, setNewCallResult] = useState<CallResult>("confirmed");
   const [newCallNotes, setNewCallNotes] = useState("");
   const [newFollowUpDate, setNewFollowUpDate] = useState("");
   const [syncOrderStatus, setSyncOrderStatus] = useState(true);
   const [submittingCall, setSubmittingCall] = useState(false);
-  const [activeTab, setActiveTab] = useState<"details" | "calls">("calls");
+  const [activeTab, setActiveTab] = useState<"details" | "calls" | "courier">("calls");
 
   // Deep-link tracker (if ?id=ESB-123456 is passed)
   const orderIdQuery = searchParams.get("id");
@@ -134,7 +148,6 @@ function OrdersContent() {
           if (match) {
             setSelectedOrder(match);
           } else {
-            // Fetch directly from server if not in current page list
             const directRes = await fetchAPI(`/api/orders/${orderIdQuery}`);
             if (directRes.success) {
               setSelectedOrder(directRes.order);
@@ -162,7 +175,11 @@ function OrdersContent() {
       });
 
       if (res.success) {
-        showAlert({ title: "সফল হয়েছে", message: `অর্ডার স্ট্যাটাস সফলভাবে '${newStatus}' আপডেট করা হয়েছে।`, type: "success" });
+        showAlert({
+          title: "সফল হয়েছে",
+          message: `অর্ডার স্ট্যাটাস সফলভাবে '${newStatus}' আপডেট করা হয়েছে।`,
+          type: "success",
+        });
         setSelectedOrder(res.order);
         loadOrders();
       }
@@ -170,6 +187,88 @@ function OrdersContent() {
       showAlert({ title: "ত্রুটি", message: err.message || "স্ট্যাটাস আপডেট ব্যর্থ হয়েছে।", type: "error" });
     } finally {
       setStatusUpdating(false);
+    }
+  };
+
+  // Steadfast Courier Handler
+  const handleSendToSteadfast = async (orderId: string) => {
+    setCourierSendingId(orderId);
+    try {
+      const res = await fetchAPI(`/api/courier/steadfast/send/${orderId}`, {
+        method: "POST",
+      });
+
+      if (res.success && res.consignment) {
+        showAlert({
+          title: "Steadfast কুরিয়ারে বুকিং সফল!",
+          message: `কনসাইনমেন্ট ID: ${res.consignment.consignment_id} | ট্র্যাকিং কোড: ${res.consignment.tracking_code}`,
+          type: "success",
+        });
+
+        if (selectedOrder && selectedOrder.orderId === orderId) {
+          setSelectedOrder(res.order);
+        }
+        loadOrders();
+      }
+    } catch (err: any) {
+      showAlert({
+        title: "কুরিয়ার বুকিং ব্যর্থ",
+        message: err.message || "Steadfast কুরিয়ারে সাবমিট করতে সমস্যা হয়েছে।",
+        type: "error",
+      });
+    } finally {
+      setCourierSendingId(null);
+    }
+  };
+
+  const handleCheckCourierStatus = async (orderId: string) => {
+    setCourierCheckingId(orderId);
+    try {
+      const res = await fetchAPI(`/api/courier/steadfast/status/${orderId}`);
+
+      if (res.success) {
+        showAlert({
+          title: "Steadfast কুরিয়ার স্ট্যাটাস",
+          message: `বর্তমান ডেলিভারি স্ট্যাটাস: '${res.courierStatus}'`,
+          type: "info",
+        });
+
+        if (selectedOrder && selectedOrder.orderId === orderId) {
+          setSelectedOrder(res.order);
+        }
+        loadOrders();
+      }
+    } catch (err: any) {
+      showAlert({
+        title: "স্ট্যাটাস চেক ব্যর্থ",
+        message: err.message || "কুরিয়ার স্ট্যাটাস পাওয়া যায়নি।",
+        type: "error",
+      });
+    } finally {
+      setCourierCheckingId(null);
+    }
+  };
+
+  const handleFetchBalance = async () => {
+    setCheckingBalance(true);
+    try {
+      const res = await fetchAPI("/api/courier/steadfast/balance");
+      if (res.success) {
+        setSteadfastBalance(res.balance);
+        showAlert({
+          title: "Steadfast কুরিয়ার ব্যালেন্স",
+          message: `আপনার বর্তমান ম Merchant ব্যালেন্স: ${res.balance} ৳`,
+          type: "success",
+        });
+      }
+    } catch (err: any) {
+      showAlert({
+        title: "ব্যালেন্স চেক ব্যর্থ",
+        message: err.message || "Steadfast ব্যালেন্স তথ্য পাওয়া যায়নি।",
+        type: "error",
+      });
+    } finally {
+      setCheckingBalance(false);
     }
   };
 
@@ -288,25 +387,6 @@ function OrdersContent() {
     }
   };
 
-  const getCallResultLabel = (res: CallResult) => {
-    switch (res) {
-      case "confirmed":
-        return "অর্ডার নিশ্চিত (Confirmed)";
-      case "cancelled":
-        return "অর্ডার বাতিল (Cancelled)";
-      case "no_answer":
-        return "কল রিসিভ হয়নি (No Answer)";
-      case "busy":
-        return "লাইন ব্যস্ত (Busy)";
-      case "wrong_number":
-        return "ভুল নম্বর (Wrong Number)";
-      case "phone_off":
-        return "ফোন বন্ধ / সুইচ অফ (Phone Off)";
-      case "callback_requested":
-        return "পুনরায় কল দিতে বলেছেন (Callback)";
-    }
-  };
-
   const closeDetails = () => {
     setSelectedOrder(null);
     if (orderIdQuery) {
@@ -315,11 +395,35 @@ function OrdersContent() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">অর্ডার ট্র্যাকার ও কল ট্র্যাকিং</h1>
-        <p className="text-sm text-slate-400 font-semibold uppercase">ক্যাশ অন ডেলিভারি (COD) ভেরিফিকেশন ও কল হিস্ট্রি সার্ভিস</p>
+    <div className="space-y-6">
+      {/* Page Header with Steadfast Courier Balance Badge */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">
+            অর্ডার ট্র্যাকার ও কুরিয়ার ইন্টিগ্রেশন
+          </h1>
+          <p className="text-sm text-slate-400 font-semibold uppercase">
+            Steadfast Courier API মেম্বারশিপ ও অটোমেটেড COD শিপিং সলিউশন
+          </p>
+        </div>
+
+        {/* Steadfast Merchant Balance Badge */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleFetchBalance}
+            disabled={checkingBalance}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800 text-white rounded-2xl text-xs font-black shadow-md transition cursor-pointer"
+          >
+            <Wallet className="w-4 h-4 text-emerald-300" />
+            {checkingBalance ? (
+              <span>ব্যালেন্স লোড হচ্ছে...</span>
+            ) : steadfastBalance !== null ? (
+              <span>Steadfast ব্যালেন্স: {steadfastBalance} ৳</span>
+            ) : (
+              <span>Steadfast ব্যালেন্স চেক</span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Filters Panel */}
@@ -389,45 +493,82 @@ function OrdersContent() {
                   <th className="py-4 px-4">মোবাইল নম্বর</th>
                   <th className="py-4 px-4 text-center">কল স্ট্যাটাস</th>
                   <th className="py-4 px-4 text-center">অর্ডার স্ট্যাটাস</th>
+                  <th className="py-4 px-4 text-center">Steadfast কুরিয়ার</th>
                   <th className="py-4 px-4 text-right">মোট মূল্য</th>
-                  <th className="py-4 px-6 text-center w-24">অ্যাকশন</th>
+                  <th className="py-4 px-6 text-center w-36">অ্যাকশন</th>
                 </tr>
               </thead>
               <tbody className="text-xs font-bold text-slate-600">
                 {orders.length > 0 ? (
-                  orders.map((order) => (
-                    <tr key={order._id} className="border-b border-slate-100 hover:bg-slate-50/20 transition-colors">
-                      <td className="py-3.5 px-6 font-black text-slate-800">
-                        #{order.orderId}
-                        {order.nextFollowUpAt && (
-                          <div className="text-[10px] text-blue-600 font-bold flex items-center gap-1 mt-0.5">
-                            <Clock className="w-3 h-3" />
-                            <span>ফলো-আপ শিডিউল</span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <p className="text-slate-800 font-bold">{order.customerName}</p>
-                        <p className="text-[10px] text-slate-400 font-normal">{order.dateString}</p>
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-700">{order.phone}</td>
-                      <td className="py-3.5 px-4 text-center">{getCallStatusBadge(order.lastCallStatus)}</td>
-                      <td className="py-3.5 px-4 text-center">{getStatusBadge(order.status)}</td>
-                      <td className="py-3.5 px-4 text-right font-black text-slate-800">{order.total}৳</td>
-                      <td className="py-3.5 px-6 text-center">
-                        <button
-                          onClick={() => setSelectedOrder(order)}
-                          className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-slate-50 hover:border-slate-350 transition-all text-[10px] font-black cursor-pointer flex items-center justify-center gap-1 mx-auto"
-                        >
-                          <PhoneCall className="w-3 h-3" />
-                          <span>কল / বিবরণ</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  orders.map((order) => {
+                    const isSending = courierSendingId === order.orderId;
+                    const isChecking = courierCheckingId === order.orderId;
+
+                    return (
+                      <tr key={order._id} className="border-b border-slate-100 hover:bg-slate-50/20 transition-colors">
+                        <td className="py-3.5 px-6 font-black text-slate-800">
+                          #{order.orderId}
+                          {order.nextFollowUpAt && (
+                            <div className="text-[10px] text-blue-600 font-bold flex items-center gap-1 mt-0.5">
+                              <Clock className="w-3 h-3" />
+                              <span>ফলো-আপ শিডিউল</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <p className="text-slate-800 font-bold">{order.customerName}</p>
+                          <p className="text-[10px] text-slate-400 font-normal">{order.dateString}</p>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-slate-700">{order.phone}</td>
+                        <td className="py-3.5 px-4 text-center">{getCallStatusBadge(order.lastCallStatus)}</td>
+                        <td className="py-3.5 px-4 text-center">{getStatusBadge(order.status)}</td>
+
+                        {/* Steadfast Courier Column */}
+                        <td className="py-3.5 px-4 text-center">
+                          {order.courierConsignmentId ? (
+                            <div className="space-y-1 flex flex-col items-center">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                #{order.courierConsignmentId}
+                              </span>
+                              <span className="text-[9px] font-mono text-slate-500">
+                                {order.courierTrackingCode || order.courierStatus || "Sent"}
+                              </span>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={isSending}
+                              onClick={() => handleSendToSteadfast(order.orderId)}
+                              className="px-2.5 py-1.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow-xs transition cursor-pointer mx-auto"
+                            >
+                              {isSending ? (
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Truck className="w-3 h-3" />
+                              )}
+                              <span>কুরিয়ারে পাঠান</span>
+                            </button>
+                          )}
+                        </td>
+
+                        <td className="py-3.5 px-4 text-right font-black text-slate-800">{order.total}৳</td>
+
+                        {/* Actions */}
+                        <td className="py-3.5 px-6 text-center">
+                          <button
+                            onClick={() => setSelectedOrder(order)}
+                            className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-slate-50 hover:border-slate-350 transition-all text-[10px] font-black cursor-pointer flex items-center justify-center gap-1 mx-auto"
+                          >
+                            <PhoneCall className="w-3 h-3" />
+                            <span>কল / বিবরণ</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
-                    <td colSpan={7} className="py-10 text-center text-slate-400">
+                    <td colSpan={8} className="py-10 text-center text-slate-400">
                       কোনো অর্ডারের রেকর্ড পাওয়া যায়নি।
                     </td>
                   </tr>
@@ -474,7 +615,7 @@ function OrdersContent() {
             <div className="h-20 border-b border-slate-150 px-6 sm:px-8 flex items-center justify-between bg-slate-50 shrink-0">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-black text-slate-800">অর্ডার ডিটেইলস ও কল ট্র্যাকিং</h3>
+                  <h3 className="text-base font-black text-slate-800">অর্ডার ডিটেইলস ও কুরিয়ার কনফিগারেশন</h3>
                   {getCallStatusBadge(selectedOrder.lastCallStatus)}
                 </div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">ID: #{selectedOrder.orderId}</p>
@@ -498,10 +639,21 @@ function OrdersContent() {
                 }`}
               >
                 <PhoneCall className="w-4 h-4" />
-                <span>কল ট্র্যাকিং ও হিস্ট্রি</span>
-                {selectedOrder.callLogs && selectedOrder.callLogs.length > 0 && (
+                <span>কল ট্র্যাকিং</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("courier")}
+                className={`py-3 px-4 text-xs font-black border-b-2 flex items-center gap-2 cursor-pointer transition-all ${
+                  activeTab === "courier"
+                    ? "border-emerald-600 text-emerald-700 bg-white"
+                    : "border-transparent text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <Truck className="w-4 h-4 text-emerald-600" />
+                <span>Steadfast কুরিয়ার</span>
+                {selectedOrder.courierConsignmentId && (
                   <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] rounded-full font-black">
-                    {selectedOrder.callLogs.length}
+                    বুকড
                   </span>
                 )}
               </button>
@@ -514,12 +666,106 @@ function OrdersContent() {
                 }`}
               >
                 <Layers className="w-4 h-4" />
-                <span>অর্ডার ও প্রোডাক্ট বিবরণী</span>
+                <span>প্রোডাক্ট বিবরণী</span>
               </button>
             </div>
 
             {/* Scroll Body */}
             <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+              {/* STEADFAST COURIER TAB */}
+              {activeTab === "courier" && (
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white rounded-3xl p-6 space-y-4 shadow-lg">
+                    <div className="flex items-center justify-between border-b border-emerald-500/30 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Truck className="w-5 h-5 text-emerald-400" />
+                        <h4 className="text-sm font-black text-white">Steadfast Courier Integration</h4>
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-400 text-emerald-950 font-black text-[10px]">
+                        API Verified
+                      </span>
+                    </div>
+
+                    {selectedOrder.courierConsignmentId ? (
+                      <div className="space-y-3 pt-1">
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="bg-white/10 p-3 rounded-2xl border border-white/10">
+                            <span className="text-[10px] text-emerald-300 font-bold uppercase block">
+                              Consignment ID
+                            </span>
+                            <span className="text-sm font-black text-white font-mono">
+                              #{selectedOrder.courierConsignmentId}
+                            </span>
+                          </div>
+                          <div className="bg-white/10 p-3 rounded-2xl border border-white/10">
+                            <span className="text-[10px] text-emerald-300 font-bold uppercase block">
+                              Tracking Code
+                            </span>
+                            <span className="text-sm font-black text-amber-300 font-mono">
+                              {selectedOrder.courierTrackingCode || "N/A"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white/10 p-3.5 rounded-2xl border border-white/10 text-xs">
+                          <div>
+                            <span className="text-[10px] text-slate-300 font-semibold block">কুরিয়ার ডেলিভারি স্ট্যাটাস:</span>
+                            <span className="font-black text-emerald-300 uppercase tracking-wider">
+                              {selectedOrder.courierStatus || "In Review"}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={courierCheckingId === selectedOrder.orderId}
+                            onClick={() => handleCheckCourierStatus(selectedOrder.orderId)}
+                            className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer"
+                          >
+                            {courierCheckingId === selectedOrder.orderId ? (
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <RefreshCw className="w-3.5 h-3.5" />
+                            )}
+                            <span>লাইভ রিফ্রেশ করুন</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 pt-1">
+                        <p className="text-xs text-slate-200 font-medium leading-relaxed">
+                          এই অর্ডারটি এখনো Steadfast Courier এ বুকিং করা হয়নি। এক ক্লিকেই পার্সেল তৈরি করতে নিচের বাটনটি চাপুন।
+                        </p>
+
+                        <div className="bg-white/10 p-3.5 rounded-2xl space-y-1.5 text-xs text-slate-300">
+                          <p><strong className="text-white">গ্রাহক:</strong> {selectedOrder.customerName} ({selectedOrder.phone})</p>
+                          <p><strong className="text-white">ঠিকানা:</strong> {selectedOrder.address}</p>
+                          <p><strong className="text-white">COD এমাউন্ট:</strong> <span className="text-amber-300 font-black">{selectedOrder.total} ৳</span></p>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={courierSendingId === selectedOrder.orderId}
+                          onClick={() => handleSendToSteadfast(selectedOrder.orderId)}
+                          className="w-full py-3 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black rounded-2xl text-xs flex items-center justify-center gap-2 transition shadow-lg cursor-pointer"
+                        >
+                          {courierSendingId === selectedOrder.orderId ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              <span>Steadfast এ বুকিং পাঠানো হচ্ছে...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-4 h-4" />
+                              <span>Steadfast কুরিয়ারে অটো বুকিং করুন ({selectedOrder.total}৳ COD)</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* CALLS TAB */}
               {activeTab === "calls" && (
                 <>
                   {/* Call Log Entry Form */}
@@ -717,6 +963,7 @@ function OrdersContent() {
                 </>
               )}
 
+              {/* DETAILS TAB */}
               {activeTab === "details" && (
                 <>
                   {/* Order Status Select Panel */}
@@ -799,53 +1046,21 @@ function OrdersContent() {
                       {selectedOrder.items.map((item, index) => (
                         <div key={index} className="p-4 flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3">
-                            <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
-                              <img src={item.image} alt={item.title} className="object-cover w-full h-full" />
+                            <div className="w-10 h-10 bg-slate-100 rounded-xl overflow-hidden relative shrink-0">
+                              <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
                             </div>
                             <div>
-                              <p className="text-xs font-black text-slate-800 line-clamp-1">{item.title}</p>
-                              <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-                                {item.price}৳ × {item.quantity} পিস
-                              </p>
+                              <p className="text-xs font-black text-slate-800">{item.title}</p>
+                              <p className="text-[10px] text-slate-400 font-bold">মূল্য: {item.price}৳ x {item.quantity}</p>
                             </div>
                           </div>
-                          <span className="text-xs font-black text-slate-800 shrink-0">{item.price * item.quantity}৳</span>
+                          <span className="text-xs font-black text-slate-800">{item.price * item.quantity}৳</span>
                         </div>
                       ))}
                     </div>
                   </div>
-
-                  {/* Billing Breakdown */}
-                  <div className="space-y-4">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">বিলিং বিবরণী</h4>
-                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4.5 space-y-2.5 text-xs font-bold text-slate-600">
-                      <div className="flex items-center justify-between">
-                        <span>প্রোডাক্ট সাবটোটাল:</span>
-                        <span>{selectedOrder.subtotal}৳</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>ডেলিভারি চার্জ ({selectedOrder.deliveryArea === "inside" ? "ঢাকার ভেতরে" : "ঢাকার বাইরে"}):</span>
-                        <span>{selectedOrder.deliveryFee}৳</span>
-                      </div>
-                      <div className="flex items-center justify-between border-t border-slate-200 pt-2.5 text-sm text-slate-800 font-black">
-                        <span>সর্বমোট বিল (৳):</span>
-                        <span>{selectedOrder.total}৳</span>
-                      </div>
-                    </div>
-                  </div>
                 </>
               )}
-            </div>
-
-            {/* Footer */}
-            <div className="h-20 border-t border-slate-150 px-6 sm:px-8 flex items-center justify-end bg-slate-50 shrink-0">
-              <button
-                type="button"
-                onClick={closeDetails}
-                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs cursor-pointer"
-              >
-                বন্ধ করুন
-              </button>
             </div>
           </div>
         </div>
@@ -856,13 +1071,11 @@ function OrdersContent() {
 
 export default function OrdersPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-[300px]">
-          <div className="w-8 h-8 rounded-full border-4 border-emerald-200 border-t-emerald-600 animate-spin" />
-        </div>
-      }
-    >
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[300px]">
+        <div className="w-8 h-8 rounded-full border-4 border-emerald-200 border-t-emerald-600 animate-spin" />
+      </div>
+    }>
       <OrdersContent />
     </Suspense>
   );

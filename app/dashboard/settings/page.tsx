@@ -264,6 +264,39 @@ export default function SettingsCMSPage() {
             </label>
           </div>
         </div>
+
+        {/* Steadfast Integration Details Card */}
+        <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-emerald-950 border border-slate-800 text-white rounded-3xl p-6 sm:p-8 space-y-4 shadow-lg">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div>
+              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                <span>৪. Steadfast Courier API অ্যাকাউন্ট (সক্রিয়)</span>
+              </h3>
+              <p className="text-[11px] text-slate-300 font-semibold mt-0.5">
+                অটোমেটেড কুরিয়ার ট্র্যাকিং ও পার্সেল সাবমিশন সিস্টেম কন্টানিউয়াস সক্রিয় রয়েছে
+              </p>
+            </div>
+            <span className="px-3 py-1 rounded-full bg-emerald-400 text-emerald-950 font-black text-[11px]">
+              Active & Connected
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div className="bg-white/10 p-4 rounded-2xl border border-white/10 space-y-1">
+              <span className="text-[10px] text-emerald-300 font-bold uppercase block">API Key</span>
+              <code className="text-amber-300 font-mono font-bold block truncate">
+                ton0jglsswkdgddbezrk00srezqho7ks
+              </code>
+            </div>
+
+            <div className="bg-white/10 p-4 rounded-2xl border border-white/10 space-y-1">
+              <span className="text-[10px] text-emerald-300 font-bold uppercase block">Secret Key</span>
+              <code className="text-amber-300 font-mono font-bold block truncate">
+                asr1xaba09sk8hsfy1gle0kv
+              </code>
+            </div>
+          </div>
+        </div>
       </form>
     </div>
   );
