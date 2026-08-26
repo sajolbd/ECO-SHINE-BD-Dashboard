@@ -119,8 +119,9 @@ export default function BannersPage() {
         showAlert({ title: "সফল হয়েছে", message: "ব্যানার সফলভাবে ডিলিট করা হয়েছে।", type: "success" });
         loadBanners();
       }
-    } catch (err: any) {
-      showAlert({ title: "ত্রুটি", message: err.message || "ডিলিট ব্যর্থ হয়েছে।", type: "error" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "ডিলিট ব্যর্থ হয়েছে।";
+      showAlert({ title: "ত্রুটি", message, type: "error" });
     }
   };
 
@@ -175,9 +176,10 @@ export default function BannersPage() {
       } else {
         showAlert({ title: "ত্রুটি", message: data.message || "আপলোড ব্যর্থ হয়েছে।", type: "error" });
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Upload error:", err);
-      showAlert({ title: "ত্রুটি", message: err.message || "আপলোড ব্যর্থ হয়েছে।", type: "error" });
+      const message = err instanceof Error ? err.message : "আপলোড ব্যর্থ হয়েছে।";
+      showAlert({ title: "ত্রুটি", message, type: "error" });
     } finally {
       setUploadingImage(false);
     }
@@ -224,8 +226,9 @@ export default function BannersPage() {
         setShowModal(false);
         loadBanners();
       }
-    } catch (err: any) {
-      showAlert({ title: "ত্রুটি", message: err.message || "সংরক্ষণ ব্যর্থ হয়েছে।", type: "error" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "সংরক্ষণ ব্যর্থ হয়েছে।";
+      showAlert({ title: "ত্রুটি", message, type: "error" });
     } finally {
       setSubmitting(false);
     }

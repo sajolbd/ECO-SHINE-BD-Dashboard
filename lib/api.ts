@@ -28,10 +28,10 @@ export async function fetchAPI(endpoint: string, options: FetchOptions = {}) {
   });
 
   const text = await response.text();
-  let data: any;
+  let data: { message?: string; [key: string]: unknown };
   try {
     data = JSON.parse(text);
-  } catch (err) {
+  } catch {
     throw new Error(
       `সার্ভার ভুল উত্তর দিয়েছে (Status ${response.status}): ${text.substring(0, 120)}`
     );
