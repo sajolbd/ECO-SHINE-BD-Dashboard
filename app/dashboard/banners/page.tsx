@@ -158,7 +158,7 @@ export default function BannersPage() {
       const formData = new FormData();
       formData.append("image", file);
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "https://ua-engineering-pte-ltd-backend-production.up.railway.app"}/api/media`,
+        `${process.env.NEXT_PUBLIC_API_URL || "https://backend-eco-shine-bd.vercel.app"}/api/media`,
         {
           method: "POST",
           headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
