@@ -6,7 +6,10 @@ interface FetchOptions extends RequestInit {
   token?: string;
 }
 
-export async function fetchAPI(endpoint: string, options: FetchOptions = {}) {
+export async function fetchAPI<T = any>(
+  endpoint: string,
+  options: FetchOptions = {}
+): Promise<T> {
   const url = `${API_URL}${endpoint}`;
 
   // Read token from localStorage on client-side
@@ -28,7 +31,7 @@ export async function fetchAPI(endpoint: string, options: FetchOptions = {}) {
   });
 
   const text = await response.text();
-  let data: { message?: string; [key: string]: unknown };
+  let data: any;
   try {
     data = JSON.parse(text);
   } catch {
@@ -38,7 +41,7 @@ export async function fetchAPI(endpoint: string, options: FetchOptions = {}) {
   }
 
   if (!response.ok) {
-    throw new Error(data.message || `API Error (${response.status})`);
+    throw new Error(data?.message || `API Error (${response.status})`);
   }
 
   return data;
