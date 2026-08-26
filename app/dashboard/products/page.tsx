@@ -259,7 +259,7 @@ export default function ProductsPage() {
         const formData = new FormData();
         formData.append("image", file);
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/media`,
+          `${process.env.NEXT_PUBLIC_API_URL || "https://ua-engineering-pte-ltd-backend-production.up.railway.app"}/api/media`,
           {
             method: "POST",
             headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
