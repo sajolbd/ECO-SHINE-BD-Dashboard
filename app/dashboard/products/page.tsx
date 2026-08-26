@@ -98,7 +98,7 @@ export default function ProductsPage() {
   // Share Link Modal State
   const [shareProduct, setShareProduct] = useState<Product | null>(null);
   const [copiedType, setCopiedType] = useState<"standard" | "order" | null>(null);
-  const [domainType, setDomainType] = useState<"vercel" | "custom">("vercel");
+  const [domainType, setDomainType] = useState<"vercel" | "custom">("custom");
 
   // Direct Upload States
   const [uploadingMain, setUploadingMain] = useState(false);
@@ -936,7 +936,7 @@ export default function ProductsPage() {
 
               {/* Link Option 1: Standard Product Landing Page */}
               {(() => {
-                const siteBase = domainType === "vercel" ? "https://eco-shine-bd.vercel.app" : "https://ecoshinebd.com";
+                const siteBase = domainType === "vercel" ? "https://eco-shine-bd.vercel.app" : "https://www.ecoshinebd.com";
                 const path = shareProduct.categoryId === "houseware" ? "/houseware" : "";
                 const standardUrl = `${siteBase}${path}/products/${shareProduct.id}`;
                 const autoOrderUrl = `${siteBase}${path}/products/${shareProduct.id}?order=true`;
