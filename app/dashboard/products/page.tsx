@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { fetchAPI } from "../../../lib/api";
+import { fetchAPI, compressImageFile } from "../../../lib/api";
 import { useModal } from "../../../context/ModalContext";
 import {
   Plus,
@@ -256,8 +256,9 @@ export default function ProductsPage() {
     try {
       const uploadedUrls: string[] = [];
       for (const file of Array.from(files)) {
+        const compressedFile = await compressImageFile(file);
         const formData = new FormData();
-        formData.append("image", file);
+        formData.append("image", compressedFile);
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL || "https://backend-eco-shine-bd.vercel.app"}/api/media`,
           {
