@@ -23,6 +23,7 @@ import {
   Check,
   Globe,
   RefreshCw,
+  Truck,
 } from "lucide-react";
 
 interface ProductFeatureStep {
@@ -67,6 +68,9 @@ interface Product {
   status: "active" | "inactive";
   featured: boolean;
   bestSeller: boolean;
+  freeDelivery?: boolean;
+  freeDeliveryMinQty?: number;
+  colors?: string[];
   seoTitle?: string;
   seoDescription?: string;
 }
@@ -79,6 +83,7 @@ export default function HousewareProductsPage() {
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [deliveryFilter, setDeliveryFilter] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -115,6 +120,9 @@ export default function HousewareProductsPage() {
   const [prodStatus, setProdStatus] = useState<"active" | "inactive">("active");
   const [featured, setFeatured] = useState(false);
   const [bestSeller, setBestSeller] = useState(false);
+  const [freeDelivery, setFreeDelivery] = useState(false);
+  const [freeDeliveryMinQty, setFreeDeliveryMinQty] = useState("1");
+  const [colorsInput, setColorsInput] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
 
@@ -165,6 +173,9 @@ export default function HousewareProductsPage() {
     setProdStatus("active");
     setFeatured(false);
     setBestSeller(false);
+    setFreeDelivery(false);
+    setFreeDeliveryMinQty("1");
+    setColorsInput("");
     setSeoTitle("");
     setSeoDescription("");
     setFormFeatures([]);
@@ -196,6 +207,9 @@ export default function HousewareProductsPage() {
     setProdStatus(product.status);
     setFeatured(product.featured);
     setBestSeller(product.bestSeller);
+    setFreeDelivery(product.freeDelivery || false);
+    setFreeDeliveryMinQty(product.freeDeliveryMinQty?.toString() || "1");
+    setColorsInput((product.colors || []).join(", "));
     setSeoTitle(product.seoTitle || "");
     setSeoDescription(product.seoDescription || "");
     setFormFeatures(product.features || []);
@@ -205,6 +219,28 @@ export default function HousewareProductsPage() {
     setFormImages(product.images || []);
     setActiveTab("general");
     setShowModal(true);
+  };
+
+  const handleToggleFreeDelivery = async (product: Product) => {
+    const updatedStatus = !product.freeDelivery;
+    try {
+      const res = await fetchAPI(`/api/products/${product.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ freeDelivery: updatedStatus }),
+      });
+      if (res.success) {
+        setProducts((prev) =>
+          prev.map((p) => (p._id === product._id ? { ...p, freeDelivery: updatedStatus } : p))
+        );
+        showAlert({
+          title: "আপডেট সফল",
+          message: `"${product.title}" প্রোডাক্টের ফ্রি ডেলিভারি ${updatedStatus ? "চালু" : "বন্ধ"} করা হয়েছে।`,
+          type: "success",
+        });
+      }
+    } catch (err: any) {
+      showAlert({ title: "ত্রুটি", message: err.message || "ফ্রি ডেলিভারি আপডেট করা সম্ভব হয়নি।", type: "error" });
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -304,6 +340,9 @@ export default function HousewareProductsPage() {
       status: prodStatus,
       featured,
       bestSeller,
+      freeDelivery,
+      freeDeliveryMinQty: freeDeliveryMinQty ? Number(freeDeliveryMinQty) : 1,
+      colors: colorsInput.split(",").map((c) => c.trim()).filter(Boolean),
       seoTitle,
       seoDescription,
     };
@@ -409,6 +448,15 @@ export default function HousewareProductsPage() {
             <option value="active">Active (সক্রিয়)</option>
             <option value="inactive">Inactive (নিষ্ক্রিয়)</option>
           </select>
+          <select
+            value={deliveryFilter}
+            onChange={(e) => setDeliveryFilter(e.target.value)}
+            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none text-slate-600"
+          >
+            <option value="">সকল ডেলিভারি টাইপ</option>
+            <option value="free">🚚 ফ্রি ডেলিভারি (০৳)</option>
+            <option value="paid">সাধারণ ডেলিভারি</option>
+          </select>
           <span className="px-3 py-1.5 rounded-xl bg-orange-100 text-orange-700 text-xs font-black border border-orange-200 flex items-center gap-1.5">
             <Home className="w-3.5 h-3.5" />
             Houseware only
@@ -431,14 +479,25 @@ export default function HousewareProductsPage() {
                   <th className="py-4 px-4">প্রোডাক্ট নাম</th>
                   <th className="py-4 px-4 text-center">স্টক</th>
                   <th className="py-4 px-4 text-center">স্টক স্ট্যাটাস</th>
+                  <th className="py-4 px-4 text-center">ডেলিভারি</th>
                   <th className="py-4 px-4 text-center">স্ট্যাটাস</th>
                   <th className="py-4 px-4 text-center">মূল্য</th>
                   <th className="py-4 px-6 text-center w-24">অ্যাকশন</th>
                 </tr>
               </thead>
               <tbody className="text-xs font-bold text-slate-600">
-                {products.length > 0 ? (
-                  products.map((product) => (
+                {products.filter((p) => {
+                  if (deliveryFilter === "free") return p.freeDelivery === true;
+                  if (deliveryFilter === "paid") return !p.freeDelivery;
+                  return true;
+                }).length > 0 ? (
+                  products
+                    .filter((p) => {
+                      if (deliveryFilter === "free") return p.freeDelivery === true;
+                      if (deliveryFilter === "paid") return !p.freeDelivery;
+                      return true;
+                    })
+                    .map((product) => (
                     <tr key={product._id} className="border-b border-orange-50 hover:bg-orange-50/30 transition-colors">
                       <td className="py-3 px-6">
                         <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-orange-100 bg-white">
@@ -460,6 +519,26 @@ export default function HousewareProductsPage() {
                             <AlertTriangle className="w-3 h-3" /><span>Stock Out</span>
                           </span>
                         )}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <button
+                          onClick={() => handleToggleFreeDelivery(product)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold transition-all cursor-pointer border ${
+                            product.freeDelivery
+                              ? "bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200 shadow-2xs"
+                              : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200"
+                          }`}
+                          title="ক্লিক করে এই পণ্যের ফ্রি ডেলিভারি চালু/বন্ধ করুন"
+                        >
+                          <Truck className="w-3 h-3" />
+                          <span>
+                            {product.freeDelivery
+                              ? (product.freeDeliveryMinQty || 1) > 1
+                                ? `🚚 ${product.freeDeliveryMinQty}+ টিতে ফ্রি`
+                                : "ফ্রি (০৳)"
+                              : "সাধারণ"}
+                          </span>
+                        </button>
                       </td>
                       <td className="py-3 px-4 text-center">
                         {product.status === "active" ? (
@@ -630,7 +709,23 @@ export default function HousewareProductsPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-slate-700">
+                        কালার অপশনসমূহ (কমা দিয়ে আলাদা করুন)
+                      </label>
+                      <input
+                        type="text"
+                        value={colorsInput}
+                        onChange={(e) => setColorsInput(e.target.value)}
+                        placeholder="যেমন: লাল, নীল, কালো, গোলাপি (যদি কালার ভ্যারিয়েন্ট থাকে)"
+                        className={`w-full px-4 py-2.5 border border-slate-200 ${accent.input} rounded-xl text-sm font-semibold focus:outline-none focus:ring-2`}
+                      />
+                      <p className="text-[11px] text-slate-400 font-medium">
+                        প্রোডাক্টের যেসব কালার এভেইলএবল, সেগুলো কমা (,) দিয়ে নাম লিখুন। যেমন: লাল, নীল, কালো
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2 items-center">
                       <label className="flex items-center gap-2 cursor-pointer select-none">
                         <input type="checkbox" checked={inStock} onChange={(e) => setInStock(e.target.checked)} className="w-4 h-4 accent-orange-500 rounded" />
                         <span className="text-xs font-black text-slate-700">ইন স্টক</span>
@@ -650,6 +745,45 @@ export default function HousewareProductsPage() {
                           <option value="inactive">Inactive</option>
                         </select>
                       </div>
+                    </div>
+
+                    {/* Free Delivery Toggle Box */}
+                    <div className="p-3.5 bg-orange-50/80 border border-orange-200/80 rounded-2xl flex flex-col justify-between mt-3 gap-3">
+                      <label className="flex items-center gap-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={freeDelivery}
+                          onChange={(e) => setFreeDelivery(e.target.checked)}
+                          className="w-5 h-5 accent-orange-600 rounded cursor-pointer"
+                        />
+                        <div>
+                          <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                            <Truck className="w-4 h-4 text-orange-600" />
+                            <span>ফ্রি ডেলিভারি অপশন (ডেলিভারি চার্জ অফ/০৳)</span>
+                          </span>
+                          <p className="text-[11px] text-slate-600 font-medium mt-0.5">
+                            চালু রাখলে নির্দিষ্ট সংখ্যক পণ্য কিনলে কাস্টমারের থেকে ডেলিভারি চার্জ নেওয়া হবে না (০৳)।
+                          </p>
+                        </div>
+                      </label>
+
+                      {freeDelivery && (
+                        <div className="pt-2 border-t border-orange-200/60 flex items-center justify-between gap-3 animate-fadeIn">
+                          <label className="text-xs font-bold text-slate-900 shrink-0">
+                            নূন্যতম কতটি কিনলে ফ্রি ডেলিভারি?
+                          </label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              min="1"
+                              value={freeDeliveryMinQty}
+                              onChange={(e) => setFreeDeliveryMinQty(e.target.value)}
+                              className="w-16 px-2.5 py-1 bg-white border border-orange-300 rounded-lg text-xs font-black text-center text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                            />
+                            <span className="text-xs font-bold text-slate-800">টি/পিস</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-1.5 pt-2">

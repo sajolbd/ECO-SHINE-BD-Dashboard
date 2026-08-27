@@ -33,6 +33,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const menuItems = [
     { name: "ওভারভিউ ড্যাশবোর্ড", href: "/dashboard", icon: LayoutDashboard, roles: ["super-admin", "admin", "editor"] },
     { name: "প্রোডাক্টস CRUD", href: "/dashboard/products", icon: ShoppingBag, roles: ["super-admin", "admin", "editor"] },
+    { name: "কম্বো অফার CRUD", href: "/dashboard/combos", icon: Package, roles: ["super-admin", "admin", "editor"] },
     { name: "ক্যাটাগরি CRUD", href: "/dashboard/categories", icon: Tags, roles: ["super-admin", "admin", "editor"] },
     { name: "অর্ডার ট্র্যাকার", href: "/dashboard/orders", icon: ShoppingCart, roles: ["super-admin", "admin", "editor"] },
     { name: "গ্রাহক তালিকা", href: "/dashboard/customers", icon: Users, roles: ["super-admin", "admin", "editor"] },
