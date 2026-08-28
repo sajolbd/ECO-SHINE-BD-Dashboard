@@ -58,11 +58,17 @@ interface Product {
   seoDescription?: string;
 }
 
+const DEFAULT_CATEGORIES: Category[] = [
+  { _id: "1", name: "Cleaning products", slug: "cleaning-products" },
+  { _id: "2", name: "Houseware", slug: "houseware" },
+  { _id: "3", name: "Combo Packs", slug: "combo-packs" },
+];
+
 export default function CombosPage() {
   const { showAlert, showConfirm } = useModal();
   const [combos, setCombos] = useState<Product[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
   const [loading, setLoading] = useState(true);
 
   // Search & Filter
