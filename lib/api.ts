@@ -1,6 +1,6 @@
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  "https://backend-eco-shine-bd.vercel.app";
+  "https://eco-shine-bd-backend.vercel.app";
 
 interface FetchOptions extends RequestInit {
   token?: string;

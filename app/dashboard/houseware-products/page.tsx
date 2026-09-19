@@ -95,7 +95,7 @@ export default function HousewareProductsPage() {
   // Share Link Modal State
   const [shareProduct, setShareProduct] = useState<Product | null>(null);
   const [copiedType, setCopiedType] = useState<"standard" | "order" | null>(null);
-  const [domainType, setDomainType] = useState<"vercel" | "custom">("custom");
+  const [domainType, setDomainType] = useState<"custom" | "local">("custom");
 
   const [uploadingMain, setUploadingMain] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
@@ -274,7 +274,7 @@ export default function HousewareProductsPage() {
         const formData = new FormData();
         formData.append("image", compressedFile);
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "https://backend-eco-shine-bd.vercel.app"}/api/media`,
+          `${process.env.NEXT_PUBLIC_API_URL || "https://eco-shine-bd-backend.vercel.app"}/api/media`,
           {
             method: "POST",
             headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
@@ -989,22 +989,22 @@ export default function HousewareProductsPage() {
                 <div className="flex items-center gap-1.5 bg-orange-50 p-1 rounded-2xl border border-orange-200">
                   <button
                     type="button"
-                    onClick={() => setDomainType("vercel")}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      domainType === "vercel" ? "bg-orange-500 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    <span>⚡ Vercel Domain</span>
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setDomainType("custom")}
                     className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                       domainType === "custom" ? "bg-orange-500 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
                     <Globe className="w-3.5 h-3.5" />
-                    <span>🌐 ecoshinebd.com</span>
+                    <span>🌐 লাইভ ডোমেইন (ecoshinebd.com)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDomainType("local")}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      domainType === "local" ? "bg-orange-500 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <span>💻 লোকাল টেস্ট (localhost:3000)</span>
                   </button>
                 </div>
               </div>
@@ -1027,7 +1027,7 @@ export default function HousewareProductsPage() {
 
               {/* Link Option 1: Standard Product Landing Page */}
               {(() => {
-                const siteBase = domainType === "vercel" ? "https://eco-shine-bd.vercel.app" : "https://www.ecoshinebd.com";
+                const siteBase = domainType === "local" ? "http://localhost:3000" : "https://www.ecoshinebd.com";
                 const standardUrl = `${siteBase}/houseware/products/${shareProduct.id}`;
                 const autoOrderUrl = `${siteBase}/houseware/products/${shareProduct.id}?order=true`;
 
@@ -1056,6 +1056,15 @@ export default function HousewareProductsPage() {
                           {copiedType === "standard" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                           <span>{copiedType === "standard" ? "কপি হয়েছে!" : "কপি করুন"}</span>
                         </button>
+                        <a
+                          href={standardUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 rounded-xl transition-all flex items-center justify-center shrink-0"
+                          title="ব্রাউজারে পেজটি খুলুন"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
                       </div>
                     </div>
 
@@ -1086,6 +1095,15 @@ export default function HousewareProductsPage() {
                           {copiedType === "order" ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
                           <span>{copiedType === "order" ? "কপি হয়েছে!" : "কপি করুন"}</span>
                         </button>
+                        <a
+                          href={autoOrderUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 rounded-xl transition-all flex items-center justify-center shrink-0"
+                          title="ব্রাউজারে সরাসরি অর্ডার পেজ খুলুন"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
                       </div>
                       <p className="text-[11px] text-slate-500 font-medium leading-tight pt-0.5">
                         💡 কাস্টমার ফেসবুকে লিংকটি ক্লিক করলেই সাথে সাথে প্রোডাক্ট পেজে অর্ডার ফর্ম পপআপ ওপেন হবে।
