@@ -1,27 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
+import LoginPage from "./login/page";
+import DashboardPage from "./dashboard/page";
 
 export default function Home() {
-  const router = useRouter();
   const { user, loading } = useAuth();
 
-  useEffect(() => {
-    if (!loading) {
-      if (user) {
-        router.replace("/dashboard");
-      } else {
-        router.replace("/login");
-      }
-    }
-  }, [user, loading, router]);
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center">
+        <div className="w-10 h-10 rounded-full border-4 border-emerald-200 border-t-emerald-600 animate-spin" />
+        <p className="text-slate-500 font-bold text-xs mt-3">অপেক্ষা করুন...</p>
+      </div>
+    );
+  }
 
-  return (
-    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center">
-      <div className="w-10 h-10 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
-      <p className="text-slate-300 font-bold text-sm mt-4">লগইন পেজে রিডাইরেক্ট করা হচ্ছে...</p>
-    </div>
-  );
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  return <DashboardPage />;
 }
