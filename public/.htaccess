@@ -1,21 +1,25 @@
-Options -MultiViews
+Options -MultiViews -Indexes
 RewriteEngine On
 RewriteBase /
 
-# 1. Handle direct existing files and directories
+# 1. NEVER rewrite _next or static assets (css, js, images, fonts)
+RewriteRule ^_next/ - [L]
+RewriteRule \.(css|js|png|jpg|jpeg|gif|ico|svg|json|woff2|woff|ttf)$ - [L]
+
+# 2. Handle direct existing files and directories
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# 2. Check if folder/index.html exists (e.g. /dashboard/customers -> /dashboard/customers/index.html)
+# 3. Check if folder/index.html exists (e.g. /dashboard/customers -> /dashboard/customers/index.html)
 RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
 RewriteRule ^(.*)$ /$1/index.html [L]
 
-# 3. Check if page.html exists (e.g. /dashboard/customers.html)
+# 4. Check if page.html exists (e.g. /dashboard/customers.html)
 RewriteCond %{DOCUMENT_ROOT}/$1.html -f
 RewriteRule ^(.*)$ /$1.html [L]
 
-# 4. Fallback to index.html for SPA client-side routing
+# 5. Fallback to index.html for SPA client-side routing
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule . /index.html [L]

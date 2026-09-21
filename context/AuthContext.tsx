@@ -38,17 +38,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initialized.current = true;
 
     const initAuth = async () => {
-      const storedToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      let storedToken: string | null = null;
+      try {
+        storedToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      } catch {
+        storedToken = null;
+      }
 
       if (!storedToken) {
-        // No token — done immediately, no spinner
+        // No token — done immediately
         setLoading(false);
         return;
       }
 
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s max
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s max timeout
 
         const res = await fetch(`${API_URL}/api/auth/me`, {
           headers: {
@@ -66,14 +71,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setUser(data.user);
             setToken(storedToken);
           } else {
-            localStorage.removeItem("token");
+            try { localStorage.removeItem("token"); } catch {}
           }
         } else {
-          localStorage.removeItem("token");
+          try { localStorage.removeItem("token"); } catch {}
         }
       } catch {
-        // Abort / network error — clear bad token
-        localStorage.removeItem("token");
+        try { localStorage.removeItem("token"); } catch {}
       } finally {
         setLoading(false);
       }
@@ -86,7 +90,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (loading) return;
 
-    const isPublicPage = pathname ? pathname.startsWith("/login") : false;
+    const isPublicPage = pathname ? (pathname.startsWith("/login") || pathname === "/login/") : false;
 
     if (!user && !isPublicPage) {
       router.replace("/login");
@@ -108,14 +112,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       throw new Error(data.message || "Invalid email or password.");
     }
 
-    localStorage.setItem("token", data.token);
+    try { localStorage.setItem("token", data.token); } catch {}
     setToken(data.token);
     setUser(data.user);
     router.replace("/dashboard");
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    try { localStorage.removeItem("token"); } catch {}
     setToken(null);
     setUser(null);
     router.replace("/login");
