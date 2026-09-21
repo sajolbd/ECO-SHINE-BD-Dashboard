@@ -86,7 +86,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (loading) return;
 
-    const isPublicPage = pathname === "/login";
+    const isPublicPage = pathname ? pathname.startsWith("/login") : false;
 
     if (!user && !isPublicPage) {
       router.replace("/login");
