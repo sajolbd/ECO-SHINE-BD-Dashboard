@@ -20,6 +20,7 @@ import {
   LogOut,
   X,
   Package,
+  Share2,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -42,6 +43,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
     { name: "আমাদের সম্পর্কে", href: "/dashboard/about", icon: BookOpen, roles: ["super-admin", "admin"] },
     { name: "যোগাযোগ & সোশ্যাল", href: "/dashboard/contact", icon: PhoneCall, roles: ["super-admin", "admin"] },
     { name: "SEO কনফিগ", href: "/dashboard/seo", icon: Globe, roles: ["super-admin", "admin"] },
+    { name: "ফেসবুক পিক্সেল", href: "/dashboard/pixel", icon: Share2, roles: ["super-admin", "admin"] },
     { name: "গ্লোবাল সেটিংস", href: "/dashboard/settings", icon: Settings, roles: ["super-admin"] },
     { name: "অ্যাডমিন ইউজারস", href: "/dashboard/admin-users", icon: UserCheck, roles: ["super-admin"] },
   ];
